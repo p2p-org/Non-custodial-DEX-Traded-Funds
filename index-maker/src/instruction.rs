@@ -2,8 +2,7 @@ use std::convert::TryInto;
 
 use solana_program::program_error::ProgramError;
 
-use crate::util::Pack;
-use crate::{error::IndexError, state::Formula};
+use crate::{error::IndexError, state::Formula, util::Pack};
 
 #[derive(Debug, PartialEq)]
 pub enum IndexInstruction {

@@ -112,6 +112,7 @@ pub struct Formula(pub Vec<Operation>);
 
 impl Formula {
     pub fn extend(&self, dst: &mut Vec<u8>) {
+        dst.extend_from_slice(&(self.0.len() as u32).to_le_bytes());
         for operation in &self.0 {
             dst.extend_from_slice(operation.to_bytes().as_slice());
         }
