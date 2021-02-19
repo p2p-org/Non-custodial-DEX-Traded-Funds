@@ -11,6 +11,9 @@ pub enum IndexError {
 
     #[error("Name is not in the UTF-8 encoding")]
     DescriptionIsNotInUtf8,
+
+    #[error("Formula uses unknown token index")]
+    UnknownTokenIndex,
 }
 
 impl From<IndexError> for ProgramError {

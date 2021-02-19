@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::{convert::TryInto, ops::Deref};
 
 use solana_program::program_error::ProgramError;
 
@@ -15,7 +15,7 @@ pub enum Operation {
     OpenPar,
     ClosePar,
     Var(u32),
-    // Indicator { id: u32, token_idx: u32 },
+    Indicator(u32, u32),
 }
 
 impl Operation {
@@ -39,6 +39,13 @@ impl Operation {
                 bytes[1..5].copy_from_slice(&index.to_le_bytes());
                 OperationBytes::Five(bytes)
             }
+            Operation::Indicator(id, token_idx) => {
+                let mut bytes = [0; 9];
+                bytes[0] = 9;
+                bytes[1..5].copy_from_slice(&id.to_le_bytes());
+                bytes[5..9].copy_from_slice(&token_idx.to_le_bytes());
+                OperationBytes::Nine(bytes)
+            }
         }
     }
 }
@@ -53,7 +60,7 @@ impl Pack for Operation {
     fn unpack_from_slice(src: &[u8]) -> Result<Self, ProgramError> {
         let (tag, src) = src.split_at(1);
         match tag[0] {
-            0 => src[..8]
+            0 => src[0..8]
                 .try_into()
                 .map(f64::from_le_bytes)
                 .map(Self::Number)
@@ -70,6 +77,17 @@ impl Pack for Operation {
                 .map(u32::from_le_bytes)
                 .map(Self::Var)
                 .map_err(|_| ProgramError::InvalidAccountData),
+            9 => {
+                let id = src[0..4]
+                    .try_into()
+                    .map(u32::from_le_bytes)
+                    .map_err(|_| ProgramError::InvalidAccountData)?;
+                let token_idx = src[4..8]
+                    .try_into()
+                    .map(u32::from_le_bytes)
+                    .map_err(|_| ProgramError::InvalidAccountData)?;
+                Ok(Self::Indicator(id, token_idx))
+            }
             _ => Err(ProgramError::InvalidAccountData),
         }
     }
@@ -163,5 +181,13 @@ impl Pack for Formula {
             dst = &mut dst[operation.len()..];
         }
         Ok(())
+    }
+}
+
+impl Deref for Formula {
+    type Target = [Operation];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }

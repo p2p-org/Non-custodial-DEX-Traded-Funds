@@ -11,7 +11,7 @@ use solana_program::{
 use crate::{
     error::IndexError,
     instruction::IndexInstruction,
-    state::{Formula, Index},
+    state::{Formula, Index, Operation},
     util::Pack,
 };
 
@@ -30,8 +30,9 @@ impl Processor {
             IndexInstruction::CreateIndex {
                 fee,
                 formula,
+                tokens,
                 description,
-            } => Self::process_create_index(accounts, fee, formula, description, program_id),
+            } => Self::process_create_index(accounts, fee, formula, tokens, description, program_id),
         }
     }
 
@@ -39,6 +40,7 @@ impl Processor {
         accounts: &[AccountInfo],
         fee: u64,
         formula: Formula,
+        tokens: Vec<Pubkey>,
         description: String,
         program_id: &Pubkey,
     ) -> ProgramResult {
@@ -48,7 +50,27 @@ impl Processor {
         let index_account = check_index_account(program_id, next_account_info(account_info_iter)?)?;
         let _rent = get_rent(index_account, next_account_info(account_info_iter)?)?;
 
-        pack_index(index_account, *initializer_account.key, fee, formula, description)?;
+        for operation in formula.iter().copied() {
+            if let Operation::Indicator(_, token_idx) = operation {
+                if token_idx as usize >= tokens.len() {
+                    msg!(
+                        "Formula uses unknown token index = {}, max is {}",
+                        token_idx,
+                        tokens.len()
+                    );
+                    return Err(IndexError::UnknownTokenIndex.into());
+                }
+            }
+        }
+
+        pack_index(
+            index_account,
+            *initializer_account.key,
+            fee,
+            formula,
+            tokens,
+            description,
+        )?;
 
         Ok(())
     }
@@ -91,6 +113,7 @@ fn pack_index(
     owner: Pubkey,
     fee: u64,
     formula: Formula,
+    tokens: Vec<Pubkey>,
     description: String,
 ) -> ProgramResult {
     let mut index = Index::unpack(&index_account.data.borrow())?;
@@ -102,7 +125,7 @@ fn pack_index(
     index.owner = owner;
     index.fee = fee;
     index.formula = formula;
-    index.tokens = Vec::new();
+    index.tokens = tokens;
     index.description = description;
 
     index.pack(&mut index_account.data.borrow_mut())

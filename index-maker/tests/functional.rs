@@ -26,25 +26,25 @@ async fn test_create_index() {
             .await;
 
     let initializer_account = Keypair::new();
-
-    let description = "DeFi Gainers (DFG) index by Alice";
     let fee = 10;
     let formula = Formula(vec![
         OpenPar,
-        Var(0),
+        Indicator(0, 0),
         Mul,
-        Var(1),
+        Indicator(1, 0),
         Plus,
-        Var(2),
+        Indicator(0, 1),
         Mul,
-        Var(3),
+        Indicator(1, 1),
         ClosePar,
         Div,
         Number(0.123),
     ]);
+    let tokens = vec![Pubkey::new_unique(), Pubkey::new_unique()];
+    let description = "DeFi Gainers (DFG) index by Alice";
 
     let index_account = Keypair::new();
-    let index_account_data_len = Index::calc_len(formula.len(), 0, description.len());
+    let index_account_data_len = Index::calc_len(formula.len(), tokens.len(), description.len());
     let rent = banks_client.get_rent().await.unwrap();
     let index_account_rent = rent.minimum_balance(index_account_data_len);
 
@@ -67,6 +67,7 @@ async fn test_create_index() {
                 data: IndexInstruction::CreateIndex {
                     fee,
                     formula: formula.clone(),
+                    tokens: tokens.clone(),
                     description: description.to_string(),
                 }
                 .pack(),
