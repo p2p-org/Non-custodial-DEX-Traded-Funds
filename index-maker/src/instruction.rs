@@ -6,7 +6,7 @@ use crate::{error::IndexError, state::Formula, util::Pack};
 
 #[derive(Debug, PartialEq)]
 pub enum IndexInstruction {
-    /// Initialize the new index
+    /// Initializes a new index
     ///
     ///
     /// Accounts expected:
