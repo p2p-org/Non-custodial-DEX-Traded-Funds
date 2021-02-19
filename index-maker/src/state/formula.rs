@@ -4,7 +4,7 @@ use solana_program::program_error::ProgramError;
 
 use crate::util::Pack;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Operation {
     Number(f64),
     Plus,
@@ -107,7 +107,7 @@ impl OperationBytes {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Formula(pub Vec<Operation>);
 
 impl Formula {
@@ -159,7 +159,7 @@ impl Pack for Formula {
         operation_count_dst.copy_from_slice(&(self.0.len() as u32).to_le_bytes());
 
         for operation in &self.0 {
-            operation.pack(dst)?;
+            operation.pack(&mut dst[..operation.len()])?;
             dst = &mut dst[operation.len()..];
         }
         Ok(())

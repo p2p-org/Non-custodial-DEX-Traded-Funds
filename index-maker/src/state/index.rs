@@ -16,13 +16,17 @@ pub struct Index {
 
 impl Index {
     pub const STATIC_DATA_LEN: usize = 1 + 32 + 8;
+
+    pub const fn calc_len(formula_len: usize, tokens_count: usize, description_len: usize) -> usize {
+        Self::STATIC_DATA_LEN + formula_len + 4 + tokens_count * 32 + 4 + description_len
+    }
 }
 
 impl Pack for Index {
     const MIN_LEN: usize = Self::STATIC_DATA_LEN + Formula::MIN_LEN + 4 + 4;
 
     fn len(&self) -> usize {
-        Self::STATIC_DATA_LEN + self.formula.len() + 4 + self.tokens.len() * 32 + 4 + self.description.len()
+        Self::calc_len(self.formula.len(), self.tokens.len(), self.description.len())
     }
 
     fn unpack_from_slice(src: &[u8]) -> Result<Self, ProgramError> {
