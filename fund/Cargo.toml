@@ -1,0 +1,17 @@
+[package]
+name = "fund"
+version = "0.1.0"
+edition = "2018"
+
+[features]
+no-entrypoint = []
+default = []
+
+[dependencies]
+solana-program = "1.5.8"
+serum-pool = { git = "https://github.com/project-serum/serum-dex" }
+spl-token = { version = "3.1.0", features = ["no-entrypoint"] }
+serum-borsh = "0.8.1-serum.1"
+
+[lib]
+crate-type = ["cdylib", "lib"]
