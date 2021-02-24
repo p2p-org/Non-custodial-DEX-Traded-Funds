@@ -23,7 +23,7 @@ impl Operation {
         match self {
             Operation::Number(number) => {
                 let mut bytes = [0; 9];
-                bytes[1..9].copy_from_slice(&number.to_le_bytes());
+                bytes[1..9].copy_from_slice(&number.to_bits().to_le_bytes());
                 OperationBytes::Nine(bytes)
             }
             Operation::Plus => OperationBytes::One([1]),
@@ -62,7 +62,7 @@ impl Pack for Operation {
         match tag[0] {
             0 => src[0..8]
                 .try_into()
-                .map(f64::from_le_bytes)
+                .map(|bytes: [u8; 8]| f64::from_bits(u64::from_le_bytes(bytes)))
                 .map(Self::Number)
                 .map_err(|_| ProgramError::InvalidAccountData),
             1 => Ok(Self::Plus),
