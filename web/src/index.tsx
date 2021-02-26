@@ -41,6 +41,10 @@ export const globals = css`
     a {
       text-decoration: none;
     }
+
+    a:visited {
+      color: inherit;
+    }
   }
 `;
 

@@ -2,6 +2,7 @@ import React, { FC } from 'react';
 
 import { styled } from '@linaria/react';
 import { useStore } from 'effector-react';
+import { Link } from 'react-router-dom';
 import { $connected, $wallet } from 'models/wallet';
 import { Button } from 'components/ui/Button';
 import { connectClicked } from './model';
@@ -29,7 +30,7 @@ const Left = styled.div`
   display: flex;
 `;
 
-const Logo = styled.div`
+const LogoLink = styled(Link)`
   font-family: TT Firs Neue, sans-serif;
   font-weight: 600;
   font-size: 18px;
@@ -62,7 +63,7 @@ export const Header: FC = () => {
     <Wrapper>
       <Container>
         <Left>
-          <Logo>.andromeda</Logo>
+          <LogoLink to="/">.andromeda</LogoLink>
           <ByA href="https://p2p.org" target="_blank" rel="noopener noreferrer">
             —{'     '}by p2p.org
           </ByA>
