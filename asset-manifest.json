@@ -1,0 +1,23 @@
+{
+  "files": {
+    "main.css": "/static/css/main.a57c2b2a.chunk.css",
+    "main.js": "/static/js/main.518f38db.chunk.js",
+    "main.js.map": "/static/js/main.518f38db.chunk.js.map",
+    "runtime-main.js": "/static/js/runtime-main.d10a1917.js",
+    "runtime-main.js.map": "/static/js/runtime-main.d10a1917.js.map",
+    "static/js/2.1c7106d3.chunk.js": "/static/js/2.1c7106d3.chunk.js",
+    "static/js/2.1c7106d3.chunk.js.map": "/static/js/2.1c7106d3.chunk.js.map",
+    "static/js/3.6b4c1ea6.chunk.js": "/static/js/3.6b4c1ea6.chunk.js",
+    "static/js/3.6b4c1ea6.chunk.js.map": "/static/js/3.6b4c1ea6.chunk.js.map",
+    "index.html": "/index.html",
+    "static/css/main.a57c2b2a.chunk.css.map": "/static/css/main.a57c2b2a.chunk.css.map",
+    "static/js/2.1c7106d3.chunk.js.LICENSE.txt": "/static/js/2.1c7106d3.chunk.js.LICENSE.txt",
+    "static/media/index.linaria.css": "/static/media/TTFirsNeue-ThinItalic.ffff0474.woff2"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.d10a1917.js",
+    "static/js/2.1c7106d3.chunk.js",
+    "static/css/main.a57c2b2a.chunk.css",
+    "static/js/main.518f38db.chunk.js"
+  ]
+}
