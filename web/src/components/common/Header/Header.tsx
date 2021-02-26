@@ -75,9 +75,7 @@ export const Header: FC = () => {
             <Button hollow onClick={connectClicked}>
               Connect wallet
             </Button>
-          ) : (
-            wallet
-          )}
+          ) : null}
         </Right>
       </Container>
     </Wrapper>

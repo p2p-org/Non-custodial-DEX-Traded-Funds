@@ -36,6 +36,7 @@ interface Props {
 }
 
 export const Button: FC<Props & ButtonHTMLAttributes<HTMLButtonElement>> = ({
+  onClick,
   primary,
   hollow,
   children,
@@ -44,6 +45,7 @@ export const Button: FC<Props & ButtonHTMLAttributes<HTMLButtonElement>> = ({
 }) => {
   return (
     <ButtonStyled
+      onClick={onClick}
       style={style}
       className={classNames(className, { primary, hollow })}
     >
