@@ -15,7 +15,7 @@
     "assert": "^2.0.0",
     "classnames": "^2.2.6",
     "customize-cra": "^1.0.0",
-    "effector": "^21.8.2",
+    "effector": "^21.8.4",
     "effector-react": "^21.2.1",
     "effector-storage": "^4.1.0",
     "eventemitter3": "^4.0.7",

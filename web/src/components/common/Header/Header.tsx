@@ -5,14 +5,14 @@ import { useStore } from 'effector-react';
 import { $connected, $wallet } from 'models/wallet';
 import { Button } from 'components/ui/Button';
 import { connectClicked } from './model';
+import { NavMenu } from './NavMenu';
 
 const Wrapper = styled.div`
   display: flex;
   align-items: center;
 
   height: 88px;
-
-  background: #fff;
+  padding: 0 20px;
 `;
 
 const Container = styled.div`
@@ -25,8 +25,33 @@ const Container = styled.div`
   margin: 0 auto;
 `;
 
+const Left = styled.div`
+  display: flex;
+`;
+
+const Logo = styled.div`
+  font-family: TT Firs Neue, sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 140%;
+`;
+
+const ByA = styled.a`
+  margin-left: 13px;
+
+  color: #8c8e99;
+  font-family: Titillium Web, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 140%;
+`;
+
 const Right = styled.div`
   display: flex;
+
+  & > :not(:last-child) {
+    margin-right: 36px;
+  }
 `;
 
 export const Header: FC = () => {
@@ -36,11 +61,22 @@ export const Header: FC = () => {
   return (
     <Wrapper>
       <Container>
-        <div>Logo</div>
+        <Left>
+          <Logo>.andromeda</Logo>
+          <ByA href="https://p2p.org" target="_blank" rel="noopener noreferrer">
+            —{'     '}by p2p.org
+          </ByA>
+        </Left>
+
         <Right>
+          <NavMenu />
           {!connected ? (
-            <Button onClick={connectClicked}>Connect</Button>
-          ) : wallet}
+            <Button hollow onClick={connectClicked}>
+              Connect wallet
+            </Button>
+          ) : (
+            wallet
+          )}
         </Right>
       </Container>
     </Wrapper>

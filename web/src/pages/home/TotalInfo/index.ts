@@ -1,0 +1,1 @@
+export { TotalInfo } from './TotalInfo';

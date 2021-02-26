@@ -8,13 +8,14 @@ import { reportWebVitals } from './reportWebVitals';
 import './models/init';
 import { css } from '@linaria/core';
 import { ress } from './styles/ress';
+import { fonts } from 'styles/fonts';
 
 createInspector();
 
 export const globals = css`
   :global() {
     ${ress}
-
+    ${fonts}
     html,
     body,
     #root {
@@ -22,12 +23,23 @@ export const globals = css`
     }
 
     body {
-      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-        'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+        'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
         'Helvetica Neue', sans-serif;
       font-feature-settings: 'kern';
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
+
+      background: #fbfbfd;
+    }
+
+    #root {
+      background-size: 100% 616px;
+      background: linear-gradient(180deg, #f0f1f5 0%, #fbfbfd 100%) no-repeat;
+    }
+
+    a {
+      text-decoration: none;
     }
   }
 `;
