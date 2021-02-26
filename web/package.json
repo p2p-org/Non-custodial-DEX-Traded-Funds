@@ -1,0 +1,80 @@
+{
+  "name": "solana-defi-hackathon",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test --env=jsdom",
+    "eject": "react-scripts eject",
+    "lint": "eslint --fix ./src"
+  },
+  "dependencies": {
+    "@project-serum/sol-wallet-adapter": "^0.1.4",
+    "@solana/web3.js": "^0.91.3",
+    "assert": "^2.0.0",
+    "classnames": "^2.2.6",
+    "customize-cra": "^1.0.0",
+    "effector": "^21.8.2",
+    "effector-react": "^21.2.1",
+    "effector-storage": "^4.1.0",
+    "eventemitter3": "^4.0.7",
+    "ramda": "^0.27.1",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-router": "^5.2.0",
+    "react-router-config": "^5.1.1",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "4.0.2",
+    "typescript": "^4.1.2",
+    "web-vitals": "^1.0.1"
+  },
+  "devDependencies": {
+    "@eslint-kit/eslint-config-base": "^3.0.0",
+    "@eslint-kit/eslint-config-node": "^2.0.0",
+    "@eslint-kit/eslint-config-prettier": "^2.0.0",
+    "@eslint-kit/eslint-config-react": "^2.1.0",
+    "@eslint-kit/eslint-config-typescript": "^3.2.0",
+    "@linaria/babel-preset": "^3.0.0-beta.1",
+    "@linaria/core": "^3.0.0-beta.1",
+    "@linaria/react": "^3.0.0-beta.1",
+    "@linaria/shaker": "^3.0.0-beta.1",
+    "@linaria/webpack-loader": "^3.0.0-beta.1",
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "@types/classnames": "^2.2.11",
+    "@types/jest": "^26.0.15",
+    "@types/node": "^12.0.0",
+    "@types/ramda": "^0.27.38",
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "@types/react-router-config": "^5.0.2",
+    "@types/react-router-dom": "^5.1.7",
+    "@typescript-eslint/parser": "^4.15.0",
+    "babel-loader": "8.1.0",
+    "effector-logger": "^0.9.0",
+    "eslint": "^7.20.0",
+    "eslint-import-resolver-typescript": "^2.3.0",
+    "prettier": "^2.2.1",
+    "react-app-rewired": "^2.1.8"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
