@@ -3,10 +3,7 @@ import React, { ButtonHTMLAttributes, FC } from 'react';
 import { styled } from '@linaria/react';
 import classNames from 'classnames';
 
-const ButtonStyled = styled.button`
-  display: flex;
-  align-items: center;
-
+const ButtonElement = styled.button`
   height: 48px;
   padding: 0 40px;
 
@@ -14,8 +11,10 @@ const ButtonStyled = styled.button`
   font-weight: 500;
   font-size: 16px;
   line-height: 100%;
+  white-space: nowrap;
 
   border-radius: 4px;
+  outline: 0;
 
   &.primary {
     color: #fff;
@@ -28,6 +27,12 @@ const ButtonStyled = styled.button`
 
     background: #ffffff;
   }
+
+  &:disabled {
+    color: #fff;
+
+    background: #a3a5ba;
+  }
 `;
 
 interface Props {
@@ -39,17 +44,19 @@ export const Button: FC<Props & ButtonHTMLAttributes<HTMLButtonElement>> = ({
   onClick,
   primary,
   hollow,
+  disabled,
   children,
   style,
   className,
 }) => {
   return (
-    <ButtonStyled
+    <ButtonElement
+      disabled={disabled}
       onClick={onClick}
       style={style}
       className={classNames(className, { primary, hollow })}
     >
       {children}
-    </ButtonStyled>
+    </ButtonElement>
   );
 };

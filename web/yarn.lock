@@ -1645,6 +1645,13 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
+"@solana/spl-token-registry@^0.1.7":
+  version "0.1.7"
+  resolved "https://registry.yarnpkg.com/@solana/spl-token-registry/-/spl-token-registry-0.1.7.tgz#b203c4e5d22b40a2477256b9d8e0c70b11e78f96"
+  integrity sha512-c6t7K2QReh88CywgKyeVM4IB6Y0hYeE5tsjfNZZ83OoFn11qEN72urCWmnk2auprcqXwELCeTVs1Cd6earWsUQ==
+  dependencies:
+    cross-fetch "^3.0.6"
+
 "@solana/web3.js@^0.91.3":
   version "0.91.3"
   resolved "https://registry.yarnpkg.com/@solana/web3.js/-/web3.js-0.91.3.tgz#826c9ee01040177798b963bf5fb2b0f0662560bb"
@@ -3935,6 +3942,13 @@ create-hmac@^1.1.0, create-hmac@^1.1.4, create-hmac@^1.1.7:
     ripemd160 "^2.0.0"
     safe-buffer "^5.0.1"
     sha.js "^2.4.8"
+
+cross-fetch@^3.0.6:
+  version "3.0.6"
+  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.0.6.tgz#3a4040bc8941e653e0e9cf17f29ebcd177d3365c"
+  integrity sha512-KBPUbqgFjzWlVcURG+Svp9TlhA5uliYtiNx/0r8nv0pdypeQCRJ9IaSIc3q/x3q8t3F75cHuwxVql1HFGHCNJQ==
+  dependencies:
+    node-fetch "2.6.1"
 
 cross-spawn@7.0.3, cross-spawn@^7.0.0, cross-spawn@^7.0.2:
   version "7.0.3"
@@ -8132,7 +8146,7 @@ node-addon-api@^2.0.0:
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-2.0.2.tgz#432cfa82962ce494b132e9d72a15b29f71ff5d32"
   integrity sha512-Ntyt4AIXyaLIuMHF6IOoTakB3K+RWxwtsHNRxllEoA6vPwP9o4866g6YWDLUdnucilZhmkxiHwHr11gAENw+QA==
 
-node-fetch@^2.6.1:
+node-fetch@2.6.1, node-fetch@^2.6.1:
   version "2.6.1"
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
   integrity sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==

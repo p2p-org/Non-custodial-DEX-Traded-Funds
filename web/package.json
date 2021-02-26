@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@project-serum/sol-wallet-adapter": "^0.1.4",
+    "@solana/spl-token-registry": "^0.1.7",
     "@solana/web3.js": "^0.91.3",
     "assert": "^2.0.0",
     "classnames": "^2.2.6",

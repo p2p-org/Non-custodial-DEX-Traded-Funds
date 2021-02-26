@@ -7,6 +7,7 @@ import { useStore } from 'effector-react';
 import { Home } from 'pages/home';
 import { NotFound } from 'pages/notFound';
 import { $connected } from 'models/wallet';
+import { Fund } from 'pages/fund';
 
 type RouteConfigCustom = RouteConfig & { needAuth?: boolean };
 
@@ -16,6 +17,11 @@ export const makeRoutes = (isAuth: boolean): RouteConfigCustom[] =>
       path: '/',
       exact: true,
       component: Home,
+    },
+    {
+      path: '/:fund',
+      exact: true,
+      component: Fund,
     },
     {
       path: '*',

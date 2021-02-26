@@ -1,20 +1,18 @@
 import React from 'react';
 import { styled } from '@linaria/react';
 import { Header } from 'components/common/Header';
+import { MainContainer } from 'components/common/MainContainer';
 import { TotalInfo } from './TotalInfo';
 import { Funds } from './Funds';
 
 const Wrapper = styled.div`
   min-height: 100%;
-  padding-bottom: 50px;
 `;
 
-const Container = styled.div`
+const Container = styled(MainContainer)`
   display: flex;
   flex-direction: column;
 
-  width: 100%;
-  max-width: 1068px;
   margin: 80px auto;
 `;
 
@@ -37,7 +35,7 @@ const FundsStyled = styled(Funds)`
 export const Home = () => {
   return (
     <Wrapper>
-      <Header />
+      <Header isMain />
       <Container>
         <Title>First ETF Fund built on Solana network</Title>
         <TotalInfoStyled />

@@ -36,6 +36,8 @@ export const globals = css`
     #root {
       background-size: 100% 616px;
       background: linear-gradient(180deg, #f0f1f5 0%, #fbfbfd 100%) no-repeat;
+
+      padding-bottom: 50px;
     }
 
     a {
