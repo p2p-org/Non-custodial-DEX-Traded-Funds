@@ -38,11 +38,11 @@ export const globals = css`
       background: linear-gradient(180deg, #f0f1f5 0%, #fbfbfd 100%) no-repeat;
     }
 
-    a {
+    a,
+    a:hover,
+    a:focus,
+    a:active {
       text-decoration: none;
-    }
-
-    a:visited {
       color: inherit;
     }
   }
