@@ -39,7 +39,6 @@ export const globals = css`
     }
 
     a,
-    a:hover,
     a:focus,
     a:active {
       text-decoration: none;
