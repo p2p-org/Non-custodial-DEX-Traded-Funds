@@ -23,8 +23,8 @@ const NavMenuLink = styled(NavLink)`
 export const NavMenu: FC = () => {
   return (
     <Wrapper>
-      <NavMenuLink to="/funs">Funds</NavMenuLink>
-      <NavMenuLink to="/myassets">My assets</NavMenuLink>
+      <NavMenuLink to="/#funs">Funds</NavMenuLink>
+      <NavMenuLink to="/#myassets">My assets</NavMenuLink>
     </Wrapper>
   );
 };

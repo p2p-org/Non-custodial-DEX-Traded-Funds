@@ -77,7 +77,7 @@ export const Funds: FC<Props & HTMLAttributes<HTMLDivElement>> = ({
       <Header>
         <Left>
           <Title>Funds</Title>
-          <CreateLink to="#">+ Create new</CreateLink>
+          <CreateLink to="/#create">+ Create new</CreateLink>
         </Left>
         <Right>
           <SortButton className={classNames({ active: true })}>
