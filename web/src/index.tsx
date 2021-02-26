@@ -38,9 +38,7 @@ export const globals = css`
       background: linear-gradient(180deg, #f0f1f5 0%, #fbfbfd 100%) no-repeat;
     }
 
-    a,
-    a:focus,
-    a:active {
+    a {
       text-decoration: none;
       color: inherit;
     }
