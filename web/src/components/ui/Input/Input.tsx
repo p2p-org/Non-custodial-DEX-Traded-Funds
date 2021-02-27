@@ -4,11 +4,21 @@ import { styled } from '@linaria/react';
 import classNames from 'classnames';
 
 const Somefix = styled.div`
+  min-width: 70px;
+
   color: #a3a5ba;
   font-family: Titillium Web, sans-serif;
   font-weight: 600;
   font-size: 16px;
   line-height: 100%;
+
+  &.left {
+    text-align: left;
+  }
+
+  &.right {
+    text-align: left;
+  }
 `;
 
 const WrapperLabel = styled.label`
@@ -62,8 +72,9 @@ interface Props {
 
 export const Input: FC<Props & InputHTMLAttributes<HTMLInputElement>> = ({
   prefix,
-  value,
   postfix,
+  value,
+  placeholder,
   style,
   className,
 }) => {
@@ -79,9 +90,14 @@ export const Input: FC<Props & InputHTMLAttributes<HTMLInputElement>> = ({
 
   return (
     <WrapperLabel style={style} className={classNames(className, { isFocus })}>
-      <Somefix>{prefix}</Somefix>
-      <InputElement value={value} onFocus={handleFocus} onBlur={handleBlur} />
-      <Somefix>{postfix}</Somefix>
+      <Somefix className={classNames({ left: true })}>{prefix}</Somefix>
+      <InputElement
+        value={value}
+        placeholder={placeholder}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+      />
+      <Somefix className={classNames({ right: true })}>{postfix}</Somefix>
     </WrapperLabel>
   );
 };

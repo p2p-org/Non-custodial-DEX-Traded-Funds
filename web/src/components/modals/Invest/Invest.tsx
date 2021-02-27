@@ -118,8 +118,8 @@ export const Invest: FC<Props> = (props) => {
             <FundName>ABDFS</FundName>
           </FundInfoWrapper>
           <InputsWrapper>
-            <Input prefix="Buy" postfix="ABDFS" />
-            <Input prefix="Pay" postfix="USDC" />
+            <Input prefix="Buy" postfix="ABDFS" placeholder="0.0" />
+            <Input prefix="Pay" postfix="USDC" placeholder="0.0" />
           </InputsWrapper>
           <OptionsWrapper>
             <Option>Max: 2665.708</Option>
