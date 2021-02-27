@@ -104,6 +104,10 @@ const Footer = styled.div`
 
 const InvestButton = styled(Button)`
   height: 56px;
+
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 140%;
 `;
 
 interface Props {
