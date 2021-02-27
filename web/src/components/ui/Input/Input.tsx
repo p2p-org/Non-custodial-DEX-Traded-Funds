@@ -17,7 +17,7 @@ const Somefix = styled.div`
   }
 
   &.right {
-    text-align: left;
+    text-align: right;
   }
 `;
 
