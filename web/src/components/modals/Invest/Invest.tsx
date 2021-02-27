@@ -106,11 +106,13 @@ const InvestButton = styled(Button)`
   height: 56px;
 `;
 
-interface Props {}
+interface Props {
+  close: () => void;
+}
 
-export const Invest: FC<Props> = (props) => {
+export const Invest: FC<Props> = ({ close }) => {
   return (
-    <WrapperModal title="Invest">
+    <WrapperModal title="Invest" close={close}>
       <Wrapper>
         <InvestWrapper>
           <FundInfoWrapper>
