@@ -1,0 +1,18 @@
+[package]
+name = "fund-tests"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0.38"
+fund = { path = "../fund" }
+solana-program = "1.5.11"
+solana-sdk = "1.5.11"
+solana-client = "1.5.11"
+spl-token = { version = "3.1.0", features = ["no-entrypoint"] }
+serum-borsh = "0.8.1-serum.1"
+serum-pool = { path = "../serum-pool" }
+
+[dev-dependencies]
+solana-program-test = "1.5.11"
+tokio = { version = "0.3", features = ["macros"] }
