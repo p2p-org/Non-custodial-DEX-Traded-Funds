@@ -1,44 +1,87 @@
-import React, { FC, InputHTMLAttributes } from 'react';
+import React, { FC, InputHTMLAttributes, useState } from 'react';
 
 import { styled } from '@linaria/react';
+import classNames from 'classnames';
+
+const Somefix = styled.div`
+  color: #a3a5ba;
+  font-family: Titillium Web, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 100%;
+`;
 
 const WrapperLabel = styled.label`
   display: flex;
   align-items: center;
+  justify-content: space-between;
 
-  height: 48px;
+  height: 56px;
+  padding: 0 20px;
 
-  background: #ffffff;
-  border: 1px solid rgba(163, 165, 186, 0.5);
-  box-sizing: border-box;
-  border-radius: 4px;
+  background: #fbfbfd;
+  border-radius: 12px;
+
+  &.isFocus {
+    background: #fbfbfd;
+    border: 1px solid #5887ff;
+
+    ${Somefix} {
+      color: #000000;
+    }
+  }
 `;
 
 const InputElement = styled.input`
   height: 100%;
-  width: 100%;
+  width: auto;
   padding: 0 20px;
 
-  color: #000000;
+  color: #a3a5ba;
   font-family: Titillium Web, sans-serif;
-  font-size: 16px;
+  font-weight: 600;
+  font-size: 24px;
   line-height: 100%;
+  text-align: center;
 
   outline: 0;
 
   &::placeholder {
-    color: #8c8e99;
+    color: #a3a5ba;
+  }
+
+  &:focus {
+    color: #5887ff;
   }
 `;
 
-export const Input: FC<InputHTMLAttributes<HTMLInputElement>> = ({
+interface Props {
+  prefix: string;
+  postfix: string;
+}
+
+export const Input: FC<Props & InputHTMLAttributes<HTMLInputElement>> = ({
+  prefix,
   value,
+  postfix,
   style,
   className,
 }) => {
+  const [isFocus, setIsFocus] = useState(false);
+
+  const handleFocus = () => {
+    setIsFocus(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocus(false);
+  };
+
   return (
-    <WrapperLabel style={style} className={className}>
-      <InputElement value={value} />
+    <WrapperLabel style={style} className={classNames(className, { isFocus })}>
+      <Somefix>{prefix}</Somefix>
+      <InputElement value={value} onFocus={handleFocus} onBlur={handleBlur} />
+      <Somefix>{postfix}</Somefix>
     </WrapperLabel>
   );
 };

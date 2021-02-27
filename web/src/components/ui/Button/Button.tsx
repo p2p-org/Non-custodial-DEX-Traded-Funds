@@ -4,28 +4,32 @@ import { styled } from '@linaria/react';
 import classNames from 'classnames';
 
 const ButtonElement = styled.button`
-  height: 48px;
+  height: 46px;
   padding: 0 40px;
 
-  font-family: TT Firs Neue, sans-serif;
-  font-weight: 500;
-  font-size: 16px;
+  font-family: Titillium Web, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
   line-height: 100%;
   white-space: nowrap;
 
-  border-radius: 4px;
+  border-radius: 12px;
   outline: 0;
 
   &.primary {
     color: #fff;
 
-    background: #62cf7a;
+    background: #5887ff;
   }
 
   &.hollow {
     color: #5887ff;
 
     background: #ffffff;
+  }
+
+  &.full {
+    width: 100%;
   }
 
   &:disabled {
@@ -38,12 +42,14 @@ const ButtonElement = styled.button`
 interface Props {
   primary?: boolean;
   hollow?: boolean;
+  full?: boolean;
 }
 
 export const Button: FC<Props & ButtonHTMLAttributes<HTMLButtonElement>> = ({
   onClick,
   primary,
   hollow,
+  full,
   disabled,
   children,
   style,
@@ -54,7 +60,7 @@ export const Button: FC<Props & ButtonHTMLAttributes<HTMLButtonElement>> = ({
       disabled={disabled}
       onClick={onClick}
       style={style}
-      className={classNames(className, { primary, hollow })}
+      className={classNames(className, { primary, hollow, full })}
     >
       {children}
     </ButtonElement>

@@ -1,1 +1,0 @@
-export { Invest } from './Invest';

@@ -1,1 +1,0 @@
-export { TotalInfo } from './TotalInfo';

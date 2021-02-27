@@ -19,7 +19,7 @@ export const globals = css`
     html,
     body,
     #root {
-      height: 100%;
+      min-height: 0;
     }
 
     body {
@@ -29,13 +29,10 @@ export const globals = css`
       font-feature-settings: 'kern';
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
-
-      background: #fbfbfd;
     }
 
     #root {
-      background-size: 100% 616px;
-      background: linear-gradient(180deg, #f0f1f5 0%, #fbfbfd 100%) no-repeat;
+      background: #fbfbfd;
 
       padding-bottom: 50px;
     }

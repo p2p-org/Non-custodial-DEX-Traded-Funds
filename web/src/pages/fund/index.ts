@@ -1,1 +1,0 @@
-export { Fund } from './Fund';

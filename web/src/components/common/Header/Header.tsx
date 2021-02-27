@@ -3,7 +3,6 @@ import React, { FC } from 'react';
 import { styled } from '@linaria/react';
 import { useStore } from 'effector-react';
 import { Link } from 'react-router-dom';
-import classNames from 'classnames';
 import { $connected } from 'models/wallet';
 import { Button } from 'components/ui/Button';
 import { connectClicked } from './model';
@@ -14,11 +13,10 @@ const Wrapper = styled.div`
   align-items: center;
 
   height: 88px;
-  padding: 0 20px;
+  padding: 0 50px;
 
-  &:not([class^='isMain']) {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  }
+  background: #ffffff;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
 `;
 
 const Container = styled.div`
@@ -60,15 +58,13 @@ const Right = styled.div`
   }
 `;
 
-interface Props {
-  isMain?: boolean;
-}
+interface Props {}
 
-export const Header: FC<Props> = ({ isMain }) => {
+export const Header: FC<Props> = () => {
   const connected = useStore($connected);
 
   return (
-    <Wrapper className={classNames({ isMain })}>
+    <Wrapper>
       <Container>
         <Left>
           <LogoLink to="/">.andromeda</LogoLink>
@@ -80,7 +76,7 @@ export const Header: FC<Props> = ({ isMain }) => {
         <Right>
           <NavMenu />
           {!connected ? (
-            <Button hollow onClick={connectClicked}>
+            <Button primary onClick={connectClicked}>
               Connect wallet
             </Button>
           ) : null}

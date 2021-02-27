@@ -14,7 +14,8 @@ const Wrapper = styled.div`
 
 const NavMenuLink = styled(NavLink)`
   color: #000000;
-  font-family: TT Firs Neue, sans-serif;
+  font-family: Titillium Web, sans-serif;
+  font-weight: 600;
   font-size: 16px;
   line-height: 140%;
   opacity: 0.8;
@@ -23,7 +24,6 @@ const NavMenuLink = styled(NavLink)`
 export const NavMenu: FC = () => {
   return (
     <Wrapper>
-      <NavMenuLink to="/">Funds</NavMenuLink>
       <NavMenuLink to="/#myassets">My assets</NavMenuLink>
     </Wrapper>
   );

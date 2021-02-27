@@ -5,9 +5,8 @@ import { renderRoutes, RouteConfig } from 'react-router-config';
 import { useStore } from 'effector-react';
 
 import { Home } from 'pages/home';
-import { NotFound } from 'pages/notFound';
+// import { NotFound } from 'pages/notFound';
 import { $connected } from 'models/wallet';
-import { Fund } from 'pages/fund';
 
 type RouteConfigCustom = RouteConfig & { needAuth?: boolean };
 
@@ -19,14 +18,13 @@ export const makeRoutes = (isAuth: boolean): RouteConfigCustom[] =>
       component: Home,
     },
     {
-      path: '/:fund',
-      exact: true,
-      component: Fund,
-    },
-    {
       path: '*',
-      component: NotFound,
+      component: () => <Redirect to="/" />,
     },
+    // {
+    //   path: '*',
+    //   component: NotFound,
+    // },
   ] as RouteConfigCustom[]).map((route) => {
     if (route.needAuth && route.needAuth !== isAuth) {
       route.component = () => <Redirect to="/" />;
