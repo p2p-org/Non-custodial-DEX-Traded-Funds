@@ -23,8 +23,9 @@ const Header = styled.div`
 
 const Title = styled.div`
   color: #000;
+  font-family: Titillium Web, sans-serif;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 20px;
   line-height: 100%;
 `;
 
