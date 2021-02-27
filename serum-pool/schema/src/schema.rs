@@ -7,7 +7,7 @@ use solana_program::pubkey::Pubkey;
 
 /// Wrapper around `solana_sdk::pubkey::Pubkey` so it can implement `BorshSerialize` etc.
 #[repr(transparent)]
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Address(Pubkey);
 
 impl From<Address> for Pubkey {
@@ -85,6 +85,7 @@ pub struct PoolState {
 
     /// Token mint account for the pool token.
     pub pool_token_mint: Address,
+
     /// Mint and vaults for the assets in the pool.
     pub assets: Vec<AssetInfo>,
 
@@ -101,6 +102,7 @@ pub struct PoolState {
 
     /// Vault for fees collected by the pool for LQD. Mint is the pool token mint.
     pub lqd_fee_vault: Address,
+
     /// Vault for fees collected by the pool for the pool initializer. Mint is the pool token mint.
     pub initializer_fee_vault: Address,
 
@@ -113,7 +115,7 @@ pub struct PoolState {
     pub custom_state: Vec<u8>,
 }
 
-#[derive(Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, BorshSchema)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, BorshSerialize, BorshDeserialize, BorshSchema)]
 pub struct AssetInfo {
     pub mint: Address,
     /// Vault should be owned by `PoolState::vault_signer`

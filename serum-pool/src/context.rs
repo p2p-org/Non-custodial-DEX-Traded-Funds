@@ -337,7 +337,7 @@ impl<'a, 'b> PoolContext<'a, 'b> {
         if rent.is_exempt(lamports, data_len as usize) {
             Ok(())
         } else {
-            msg!("Account is not rent exempt");
+            msg!("Account {} is not rent exempt", account.key);
             Err(ProgramError::InvalidArgument)
         }
     }
@@ -658,7 +658,7 @@ impl<'a, 'b> PoolContext<'a, 'b> {
     }
 }
 
-fn check_account_address(account: &AccountInfo, address: &Address) -> Result<(), ProgramError> {
+pub fn check_account_address(account: &AccountInfo, address: &Address) -> Result<(), ProgramError> {
     if account.key != address.as_ref() {
         msg!("Incorrect account address");
         return Err(ProgramError::InvalidArgument);
@@ -666,7 +666,7 @@ fn check_account_address(account: &AccountInfo, address: &Address) -> Result<(),
     Ok(())
 }
 
-fn check_mint_minter(account: &AccountInfo, mint_authority: &Pubkey) -> Result<(), ProgramError> {
+pub fn check_mint_minter(account: &AccountInfo, mint_authority: &Pubkey) -> Result<(), ProgramError> {
     if account.owner != &spl_token::ID {
         msg!("Account not owned by spl-token program");
         return Err(ProgramError::IncorrectProgramId);
@@ -679,7 +679,7 @@ fn check_mint_minter(account: &AccountInfo, mint_authority: &Pubkey) -> Result<(
     Ok(())
 }
 
-fn check_token_account(
+pub fn check_token_account(
     account: &AccountInfo,
     mint: &Pubkey,
     authority: Option<&Pubkey>,
