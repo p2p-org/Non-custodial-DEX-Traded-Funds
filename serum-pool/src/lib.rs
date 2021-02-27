@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-use std::ops::DerefMut;
 
 use arrayref::array_ref;
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -104,10 +103,19 @@ impl<'a, 'b, P: Pool> PoolProcessor<'a, 'b, P> {
         if self.accounts.len() < 1 {
             return Err(ProgramError::NotEnoughAccountKeys);
         }
+
         let account = &self.accounts[0];
-        let mut buf = account.try_borrow_mut_data()?;
-        BorshSerialize::serialize(&state, buf.deref_mut())
-            .map_err(|_| ProgramError::AccountDataTooSmall)
+        let mut buf = Vec::new();
+        BorshSerialize::serialize(&state, &mut buf)
+            .map_err(|_| ProgramError::AccountDataTooSmall)?;
+
+        if account.data_len() != buf.len() {
+            msg!("Actual account data len {} does not match the required {}", buf.len(), account.data_len());
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        account.try_borrow_mut_data()?.copy_from_slice(&buf);
+        Ok(())
     }
 
     fn process_instruction(&self) -> PoolResult<()> {
