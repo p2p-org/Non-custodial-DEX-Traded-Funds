@@ -4,6 +4,7 @@ import { styled } from '@linaria/react';
 import classNames from 'classnames';
 import { FundRow } from './FundRow';
 import { Column } from './common/Column';
+import { Selector } from './Selector';
 
 const Wrapper = styled.div``;
 
@@ -35,10 +36,10 @@ const ColumnName = styled.div`
   font-size: 13px;
   line-height: 140%;
 
-  cursor: pointer;
-
-  &:hover {
+  &.since {
     color: #000000;
+
+    cursor: pointer;
   }
 `;
 
@@ -70,7 +71,9 @@ export const Funds: FC<Props & HTMLAttributes<HTMLDivElement>> = ({
           <ColumnName>Price</ColumnName>
         </Column>
         <Column className={classNames({ since: true })}>
-          <ColumnName>Since inception</ColumnName>
+          <ColumnName className={classNames({ since: true })}>
+            <Selector>Since inception</Selector>
+          </ColumnName>
         </Column>
         <Column className={classNames({ balance: true })}>
           <ColumnName>Balance</ColumnName>
