@@ -3,9 +3,18 @@ use serum_pool::schema::declare_tag;
 
 declare_tag!(FundInstructionTag, u64, 0x112ea41452f06767);
 
+/// Additional data for `PoolRequestInner::Initialize`.
+///
+/// Additional accounts:
+///
+/// - `[writable]` Fund admin account
+/// - `[writable]` Initial supply fund token account
+/// - `[]` Fund vault account of basic asset
+/// - `[]` spl-token program account
 #[derive(Clone, PartialEq, Eq, Debug, Default, BorshSerialize, BorshDeserialize)]
 pub struct InitializeFundData {
-    pub token_initial_amount: u64,
+    pub asset_weights: Vec<u32>,
+    pub fund_token_initial_supply: u64,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, BorshSerialize, BorshDeserialize)]

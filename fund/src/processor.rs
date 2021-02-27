@@ -1,5 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use serum_pool::{
+    context::check_token_account,
     schema::{AssetInfo, Basket, InitializePoolRequest, PoolState, FEE_RATE_DENOMINATOR, MIN_FEE_RATE},
     Pool, PoolContext,
 };
@@ -31,38 +32,71 @@ impl Pool for Fund {
             msg!("Missing fund admin account");
             ProgramError::NotEnoughAccountKeys
         })?;
-        let initial_fund_token_account = context.custom_accounts.get(1).ok_or_else(|| {
-            msg!("Missing initial fund token account");
+        let initial_supply_fund_token_account = context.custom_accounts.get(1).ok_or_else(|| {
+            msg!("Missing initial supply fund token account");
             ProgramError::NotEnoughAccountKeys
         })?;
-        let spl_token_program_account = context.custom_accounts.get(2).ok_or_else(|| {
+        let basic_asset_vault_account = context.custom_accounts.get(2).ok_or_else(|| {
+            msg!("Missing fund vault account of basic asset");
+            ProgramError::NotEnoughAccountKeys
+        })?;
+        let spl_token_program_account = context.custom_accounts.get(3).ok_or_else(|| {
             msg!("Missing spl-token account");
             ProgramError::NotEnoughAccountKeys
         })?;
 
+        context.check_rent_exemption(admin_account)?;
         state.admin_key = Some(admin_account.key.into());
-        state.write_fund_state(&FundState::default())?;
+
+        context.check_rent_exemption(initial_supply_fund_token_account)?;
+        check_token_account(
+            initial_supply_fund_token_account,
+            context.pool_token_mint.key,
+            Some(state.vault_signer.as_ref()),
+        )?;
+
+        context.check_rent_exemption(basic_asset_vault_account)?;
+        let basic_asset_token_account = TokenAccount::unpack(&basic_asset_vault_account.try_borrow_data()?)?;
+        let basic_asset = AssetInfo {
+            mint: basic_asset_token_account.mint.into(),
+            vault_address: basic_asset_vault_account.key.into(),
+        };
 
         let fund_data: InitializeFundData = {
             let mut data = request.custom_data.as_slice();
             BorshDeserialize::deserialize(&mut data).map_err(|err| {
-                msg!("Deserialize initial fund date error: {}", err);
+                msg!("Deserialize initial fund data error: {}", err);
                 ProgramError::InvalidInstructionData
             })?
         };
+
+        if fund_data.asset_weights.len() != state.assets.len() {
+            msg!(
+                "Asset weights count {} does not match the assets count {}",
+                fund_data.asset_weights.len(),
+                state.assets.len()
+            );
+            return Err(ProgramError::InvalidInstructionData);
+        }
+
+        state.write_fund_state(&FundState {
+            paused: false,
+            asset_weights: fund_data.asset_weights,
+            basic_asset,
+        })?;
 
         msg!("Mint initial tokens");
         invoke_signed(
             &spl_token::instruction::mint_to(
                 &spl_token::id(),
                 context.pool_token_mint.key,
-                initial_fund_token_account.key,
+                initial_supply_fund_token_account.key,
                 context.pool_authority.key,
                 &[],
-                fund_data.token_initial_amount,
+                fund_data.fund_token_initial_supply,
             )?,
             &[
-                initial_fund_token_account.clone(),
+                initial_supply_fund_token_account.clone(),
                 context.pool_token_mint.clone(),
                 context.pool_authority.clone(),
                 spl_token_program_account.clone(),

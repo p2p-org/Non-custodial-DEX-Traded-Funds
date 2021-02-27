@@ -1,10 +1,12 @@
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
-use serum_pool::schema::{Address, AssetInfo, PoolState};
-use solana_program::{msg, program_error::ProgramError, pubkey::Pubkey};
+use serum_pool::schema::{AssetInfo, PoolState};
+use solana_program::{msg, program_error::ProgramError};
 
 #[derive(Clone, PartialEq, Eq, Debug, BorshSerialize, BorshDeserialize, BorshSchema, Default)]
 pub struct FundState {
     pub paused: bool,
+    pub asset_weights: Vec<u32>,
+    pub basic_asset: AssetInfo,
 }
 
 pub trait FundStateContainer {
@@ -27,28 +29,26 @@ impl FundStateContainer for PoolState {
 }
 
 pub fn calc_len(name: impl Into<String>, assets_count: usize) -> usize {
-    let default_address: Address = Pubkey::default().into();
     let mut state = PoolState {
         tag: Default::default(),
-        pool_token_mint: default_address.clone(),
-        assets: (0..assets_count)
-            .map(|_| AssetInfo {
-                mint: default_address.clone(),
-                vault_address: default_address.clone(),
-            })
-            .collect(),
-        vault_signer: default_address.clone(),
+        pool_token_mint: Default::default(),
+        assets: (0..assets_count).map(|_| Default::default()).collect(),
+        vault_signer: Default::default(),
         vault_signer_nonce: 1,
         account_params: vec![],
         name: name.into(),
-        lqd_fee_vault: default_address.clone(),
-        initializer_fee_vault: default_address.clone(),
+        lqd_fee_vault: Default::default(),
+        initializer_fee_vault: Default::default(),
         fee_rate: 0,
-        admin_key: Some(default_address),
+        admin_key: Some(Default::default()),
         custom_state: vec![],
     };
     state
-        .write_fund_state(&FundState::default())
+        .write_fund_state(&FundState {
+            paused: false,
+            asset_weights: vec![1; assets_count],
+            basic_asset: Default::default(),
+        })
         .expect("FundState should be writeable");
     state.try_to_vec().expect("PoolState should be serializable").len()
 }
