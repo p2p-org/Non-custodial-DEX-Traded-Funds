@@ -1,0 +1,15 @@
+{
+  "plugins": [
+    ["effector/babel-plugin", { "addLoc": true }]
+  ],
+  "presets": [
+    [
+      "react-app",
+      {
+        "flow": false,
+        "typescript": true
+      }
+    ],
+    "@linaria"
+  ]
+}
