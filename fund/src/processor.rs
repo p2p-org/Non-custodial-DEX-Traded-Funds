@@ -1,8 +1,6 @@
-use std::ops::DerefMut;
-
 use borsh::{BorshDeserialize, BorshSerialize};
 use serum_pool::{
-    schema::{AssetInfo, Basket, PoolState, FEE_RATE_DENOMINATOR, MIN_FEE_RATE},
+    schema::{AssetInfo, Basket, InitializePoolRequest, PoolState, FEE_RATE_DENOMINATOR, MIN_FEE_RATE},
     Pool, PoolContext,
 };
 use solana_program::{
@@ -17,20 +15,61 @@ use solana_program::{
 use spl_token::state::Account as TokenAccount;
 
 use crate::{
-    instruction::{FundInstruction, FundInstructionInner},
+    instruction::{FundInstruction, FundInstructionInner, InitializeFundData},
     state::{FundState, FundStateContainer},
 };
 
 pub struct Fund;
 
 impl Pool for Fund {
-    fn initialize_pool(context: &PoolContext, state: &mut PoolState) -> Result<(), ProgramError> {
-        if context.custom_accounts.len() < 1 {
+    fn initialize_pool(
+        context: &PoolContext,
+        state: &mut PoolState,
+        request: &InitializePoolRequest,
+    ) -> Result<(), ProgramError> {
+        let admin_account = context.custom_accounts.get(0).ok_or_else(|| {
             msg!("Missing fund admin account");
-            return Err(ProgramError::NotEnoughAccountKeys);
-        }
-        state.admin_key = Some(context.custom_accounts[0].key.into());
+            ProgramError::NotEnoughAccountKeys
+        })?;
+        let initial_fund_token_account = context.custom_accounts.get(1).ok_or_else(|| {
+            msg!("Missing initial fund token account");
+            ProgramError::NotEnoughAccountKeys
+        })?;
+        let spl_token_program_account = context.custom_accounts.get(2).ok_or_else(|| {
+            msg!("Missing spl-token account");
+            ProgramError::NotEnoughAccountKeys
+        })?;
+
+        state.admin_key = Some(admin_account.key.into());
         state.write_fund_state(&FundState::default())?;
+
+        let fund_data: InitializeFundData = {
+            let mut data = request.custom_data.as_slice();
+            BorshDeserialize::deserialize(&mut data).map_err(|err| {
+                msg!("Deserialize initial fund date error: {}", err);
+                ProgramError::InvalidInstructionData
+            })?
+        };
+
+        msg!("Mint initial tokens");
+        invoke_signed(
+            &spl_token::instruction::mint_to(
+                &spl_token::id(),
+                context.pool_token_mint.key,
+                initial_fund_token_account.key,
+                context.pool_authority.key,
+                &[],
+                fund_data.token_initial_amount,
+            )?,
+            &[
+                initial_fund_token_account.clone(),
+                context.pool_token_mint.clone(),
+                context.pool_authority.clone(),
+                spl_token_program_account.clone(),
+            ],
+            &[&[context.pool_account.key.as_ref(), &[state.vault_signer_nonce]]],
+        )?;
+
         Ok(())
     }
 
@@ -101,12 +140,20 @@ impl Pool for Fund {
 
         Self::process_admin_request(&pool_account, accounts_iter, &mut pool_state, &instruction)?;
 
-        {
-            let mut buf = pool_account.try_borrow_mut_data()?;
-            BorshSerialize::serialize(&pool_state, buf.deref_mut()).map_err(|_| ProgramError::AccountDataTooSmall)?;
-        }
+        let mut buf = Vec::new();
+        BorshSerialize::serialize(&pool_state, &mut buf).map_err(|_| ProgramError::AccountDataTooSmall)?;
 
-        Ok(())
+        if pool_account.data_len() != buf.len() {
+            msg!(
+                "Actual pool account data len {} does not match the required {}",
+                buf.len(),
+                pool_account.data_len()
+            );
+            Err(ProgramError::InvalidAccountData)
+        } else {
+            pool_account.try_borrow_mut_data()?.copy_from_slice(&buf);
+            Ok(())
+        }
     }
 }
 

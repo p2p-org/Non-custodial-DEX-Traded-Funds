@@ -3,6 +3,11 @@ use serum_pool::schema::declare_tag;
 
 declare_tag!(FundInstructionTag, u64, 0x112ea41452f06767);
 
+#[derive(Clone, PartialEq, Eq, Debug, Default, BorshSerialize, BorshDeserialize)]
+pub struct InitializeFundData {
+    pub token_initial_amount: u64,
+}
+
 #[derive(Clone, PartialEq, Eq, Debug, BorshSerialize, BorshDeserialize)]
 pub struct FundInstruction {
     pub tag: FundInstructionTag,
