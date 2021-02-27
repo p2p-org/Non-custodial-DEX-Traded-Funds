@@ -3,14 +3,14 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
-use serum_pool_schema::{Basket, PoolState};
+use serum_pool_schema::{Basket, PoolState, InitializePoolRequest};
 
 use crate::context::PoolContext;
 
 /// Trait to implement for custom pool implementations.
 pub trait Pool {
     #[allow(unused_variables)]
-    fn initialize_pool(context: &PoolContext, state: &mut PoolState) -> Result<(), ProgramError> {
+    fn initialize_pool(context: &PoolContext, state: &mut PoolState, request: &InitializePoolRequest) -> Result<(), ProgramError> {
         Ok(())
     }
 

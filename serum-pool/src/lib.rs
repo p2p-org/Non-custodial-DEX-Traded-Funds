@@ -214,7 +214,7 @@ impl<'a, 'b, P: Pool> PoolProcessor<'a, 'b, P> {
         self.check_lqd_fee_account(&state, lqd_fee_vault)?;
         context.check_rent_exemption(initializer_fee_vault)?;
 
-        P::initialize_pool(&context, &mut state)?;
+        P::initialize_pool(&context, &mut state, request)?;
         if *context.pool_authority.key != context.derive_vault_authority(&state)? {
             msg!("Invalid pool authority");
             return Err(ProgramError::InvalidArgument);
