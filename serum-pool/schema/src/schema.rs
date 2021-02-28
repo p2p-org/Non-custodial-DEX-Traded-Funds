@@ -1,8 +1,9 @@
-use std::collections::HashMap;
-use std::{io, io::Write};
+use std::{collections::HashMap, io, io::Write, ops::Deref};
 
-use borsh::schema::{Declaration, Definition};
-use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
+use borsh::{
+    schema::{Declaration, Definition},
+    BorshDeserialize, BorshSchema, BorshSerialize,
+};
 use solana_program::pubkey::Pubkey;
 
 /// Wrapper around `solana_sdk::pubkey::Pubkey` so it can implement `BorshSerialize` etc.
@@ -37,6 +38,14 @@ impl From<Pubkey> for Address {
 impl From<&Pubkey> for Address {
     fn from(pubkey: &Pubkey) -> Self {
         Self(*pubkey)
+    }
+}
+
+impl Deref for Address {
+    type Target = Pubkey;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -224,9 +233,7 @@ impl BorshSerialize for Address {
 
 impl BorshDeserialize for Address {
     fn deserialize(buf: &mut &[u8]) -> io::Result<Self> {
-        Ok(Self(Pubkey::new_from_array(BorshDeserialize::deserialize(
-            buf,
-        )?)))
+        Ok(Self(Pubkey::new_from_array(BorshDeserialize::deserialize(buf)?)))
     }
 }
 
@@ -235,9 +242,7 @@ impl BorshSchema for Address {
         Self::add_definition(
             Self::declaration(),
             Definition::Struct {
-                fields: borsh::schema::Fields::UnnamedFields(vec![
-                    <[u8; 32] as BorshSchema>::declaration(),
-                ]),
+                fields: borsh::schema::Fields::UnnamedFields(vec![<[u8; 32] as BorshSchema>::declaration()]),
             },
             definitions,
         );

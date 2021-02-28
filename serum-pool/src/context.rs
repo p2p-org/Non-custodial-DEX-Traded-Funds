@@ -1,9 +1,7 @@
 use std::convert::TryInto;
 
 use crate::next_account_infos;
-use serum_pool_schema::{
-    Address, Basket, PoolRequestInner, PoolState, FEE_RATE_DENOMINATOR, MIN_FEE_RATE,
-};
+use serum_pool_schema::{Basket, PoolRequestInner, PoolState, FEE_RATE_DENOMINATOR, MIN_FEE_RATE};
 use solana_program;
 use solana_program::account_info::next_account_info;
 use solana_program::instruction::{AccountMeta, Instruction};
@@ -95,29 +93,28 @@ impl<'a, 'b> PoolContext<'a, 'b> {
             custom_accounts: &[],
         };
 
-        check_account_address(context.pool_token_mint, &state.pool_token_mint)?;
+        check_account_address(
+            context.pool_token_mint,
+            &state.pool_token_mint,
+            stringify!(pool_token_mint),
+        )?;
         check_mint_minter(context.pool_token_mint, state.vault_signer.as_ref())?;
-        for (asset_info, vault_account) in
-            state.assets.iter().zip(context.pool_vault_accounts.iter())
-        {
-            check_account_address(vault_account, &asset_info.vault_address)?;
+        for (asset_info, vault_account) in state.assets.iter().zip(context.pool_vault_accounts.iter()) {
+            check_account_address(vault_account, &asset_info.vault_address, stringify!(vault_account))?;
             check_token_account(
                 vault_account,
                 asset_info.mint.as_ref(),
                 Some(state.vault_signer.as_ref()),
             )?;
         }
-        check_account_address(context.pool_authority, &state.vault_signer)?;
+        check_account_address(context.pool_authority, &state.vault_signer, stringify!(pool_authority))?;
 
         match request {
             PoolRequestInner::GetBasket(_) => {
                 let retbuf_account = next_account_info(accounts_iter)?;
                 let retbuf_program = next_account_info(accounts_iter)?;
                 context.retbuf = Some(RetbufAccounts::new(retbuf_account, retbuf_program)?);
-                context.account_params = Some(next_account_infos(
-                    accounts_iter,
-                    state.account_params.len(),
-                )?);
+                context.account_params = Some(next_account_infos(accounts_iter, state.account_params.len())?);
             }
             PoolRequestInner::Execute(_) => {
                 let pool_token_account = next_account_info(accounts_iter)?;
@@ -126,12 +123,7 @@ impl<'a, 'b> PoolContext<'a, 'b> {
                 let lqd_fee_account = next_account_info(accounts_iter)?;
                 let initializer_fee_account = next_account_info(accounts_iter)?;
                 let referrer_fee_account = next_account_info(accounts_iter)?;
-                context.user_accounts = Some(UserAccounts::new(
-                    state,
-                    pool_token_account,
-                    asset_accounts,
-                    authority,
-                )?);
+                context.user_accounts = Some(UserAccounts::new(state, pool_token_account, asset_accounts, authority)?);
                 context.fee_accounts = Some(FeeAccounts::new(
                     state,
                     lqd_fee_account,
@@ -139,10 +131,7 @@ impl<'a, 'b> PoolContext<'a, 'b> {
                     referrer_fee_account,
                 )?);
                 context.spl_token_program = Some(next_account_info(accounts_iter)?);
-                context.account_params = Some(next_account_infos(
-                    accounts_iter,
-                    state.account_params.len(),
-                )?);
+                context.account_params = Some(next_account_infos(accounts_iter, state.account_params.len())?);
             }
             PoolRequestInner::Initialize(_) => {
                 let lqd_fee_account = next_account_info(accounts_iter)?;
@@ -174,9 +163,8 @@ impl<'a, 'b> PoolContext<'a, 'b> {
         }
 
         if let Some(account_params) = context.account_params {
-            for (param_desc, account_info) in state.account_params.iter().zip(account_params.iter())
-            {
-                check_account_address(account_info, &param_desc.address)?;
+            for (param_desc, account_info) in state.account_params.iter().zip(account_params.iter()) {
+                check_account_address(account_info, &param_desc.address, stringify!(account_info))?;
             }
         }
 
@@ -212,18 +200,18 @@ impl<'a, 'b> FeeAccounts<'a, 'b> {
         initializer_fee_account: &'a AccountInfo<'b>,
         referrer_fee_account: &'a AccountInfo<'b>,
     ) -> Result<Self, ProgramError> {
-        check_account_address(lqd_fee_account, &state.lqd_fee_vault)?;
-        check_account_address(initializer_fee_account, &state.initializer_fee_vault)?;
+        check_account_address(lqd_fee_account, &state.lqd_fee_vault, stringify!(lqd_fee_account))?;
+        check_account_address(
+            initializer_fee_account,
+            &state.initializer_fee_vault,
+            stringify!(initializer_fee_account),
+        )?;
         check_token_account(
             lqd_fee_account,
             state.pool_token_mint.as_ref(),
             Some(&serum_pool_schema::fee_owner::ID),
         )?;
-        check_token_account(
-            initializer_fee_account,
-            state.pool_token_mint.as_ref(),
-            None,
-        )?;
+        check_token_account(initializer_fee_account, state.pool_token_mint.as_ref(), None)?;
         check_token_account(referrer_fee_account, state.pool_token_mint.as_ref(), None)?;
         Ok(FeeAccounts {
             lqd_fee_account,
@@ -234,10 +222,7 @@ impl<'a, 'b> FeeAccounts<'a, 'b> {
 }
 
 impl<'a, 'b> RetbufAccounts<'a, 'b> {
-    pub fn new(
-        account: &'a AccountInfo<'b>,
-        program: &'a AccountInfo<'b>,
-    ) -> Result<Self, ProgramError> {
+    pub fn new(account: &'a AccountInfo<'b>, program: &'a AccountInfo<'b>) -> Result<Self, ProgramError> {
         if account.owner != program.key {
             msg!("Incorrect retbuf account owner");
             return Err(ProgramError::IncorrectProgramId);
@@ -282,14 +267,9 @@ impl Fees {
                 initializer_fee: 0,
             })
         } else {
-            let total_fee = (((tokens as u128) * (fee_rate as u128) - 1)
-                / FEE_RATE_DENOMINATOR as u128
-                + 1) as u64;
+            let total_fee = (((tokens as u128) * (fee_rate as u128) - 1) / FEE_RATE_DENOMINATOR as u128 + 1) as u64;
             assert!(total_fee <= tokens);
-            let lqd_fee = max(
-                total_fee.checked_mul(2).unwrap() / 5,
-                (tokens - 1) / 10000 + 1,
-            );
+            let lqd_fee = max(total_fee.checked_mul(2).unwrap() / 5, (tokens - 1) / 10000 + 1);
             assert!(lqd_fee <= total_fee);
             let referrer_fee = min(lqd_fee / 2, total_fee - lqd_fee);
             assert!(lqd_fee.checked_add(referrer_fee).unwrap() <= total_fee);
@@ -319,12 +299,10 @@ impl Fees {
 impl<'a, 'b> PoolContext<'a, 'b> {
     pub(crate) fn derive_vault_authority(&self, state: &PoolState) -> Result<Pubkey, ProgramError> {
         let seeds = &[self.pool_account.key.as_ref(), &[state.vault_signer_nonce]];
-        Ok(
-            Pubkey::create_program_address(seeds, self.program_id).map_err(|e| {
-                msg!("Invalid vault signer nonce");
-                e
-            })?,
-        )
+        Ok(Pubkey::create_program_address(seeds, self.program_id).map_err(|e| {
+            msg!("Invalid vault signer nonce");
+            e
+        })?)
     }
 
     pub fn check_rent_exemption(&self, account: &AccountInfo) -> Result<(), ProgramError> {
@@ -362,11 +340,7 @@ impl<'a, 'b> PoolContext<'a, 'b> {
 
     /// Computes a basket by dividing the current contents of the pool vaults by the
     /// number of outstanding pool tokens.
-    pub fn get_simple_basket(
-        &self,
-        pool_tokens_requested: u64,
-        round_up: bool,
-    ) -> Result<Basket, ProgramError> {
+    pub fn get_simple_basket(&self, pool_tokens_requested: u64, round_up: bool) -> Result<Basket, ProgramError> {
         let total_pool_tokens = self.total_pool_tokens()?;
         if total_pool_tokens == 0 {
             msg!("Pool is empty");
@@ -378,11 +352,7 @@ impl<'a, 'b> PoolContext<'a, 'b> {
             .map(|pool_quantity| {
                 (*pool_quantity as u128)
                     .checked_mul(pool_tokens_requested as u128)?
-                    .checked_add(if round_up {
-                        total_pool_tokens.checked_sub(1)?
-                    } else {
-                        0
-                    } as u128)?
+                    .checked_add(if round_up { total_pool_tokens.checked_sub(1)? } else { 0 } as u128)?
                     .checked_div(total_pool_tokens as u128)?
                     .try_into()
                     .ok()
@@ -420,14 +390,9 @@ impl<'a, 'b> PoolContext<'a, 'b> {
 
     /// Transfers basket tokens from the user to the pool.
     pub fn transfer_basket_from_user(&self, basket: &Basket) -> Result<(), ProgramError> {
-        let user_accounts = self
-            .user_accounts
-            .as_ref()
-            .ok_or(ProgramError::InvalidArgument)?;
+        let user_accounts = self.user_accounts.as_ref().ok_or(ProgramError::InvalidArgument)?;
         let pool_vault_accounts = self.pool_vault_accounts;
-        let spl_token_program = self
-            .spl_token_program
-            .ok_or(ProgramError::InvalidArgument)?;
+        let spl_token_program = self.spl_token_program.ok_or(ProgramError::InvalidArgument)?;
 
         let zipped_iter = basket
             .quantities
@@ -447,9 +412,7 @@ impl<'a, 'b> PoolContext<'a, 'b> {
                 destination_pubkey,
                 authority_pubkey,
                 signer_pubkeys,
-                input_qty
-                    .try_into()
-                    .or(Err(ProgramError::InvalidArgument))?,
+                input_qty.try_into().or(Err(ProgramError::InvalidArgument))?,
             )?;
 
             let account_infos = &[
@@ -473,17 +436,9 @@ impl<'a, 'b> PoolContext<'a, 'b> {
         let fees = self.get_fees(state, quantity)?;
         let remainder = quantity - fees.total_fee();
 
-        let user_accounts = self
-            .user_accounts
-            .as_ref()
-            .ok_or(ProgramError::InvalidArgument)?;
-        let fee_accounts = self
-            .fee_accounts
-            .as_ref()
-            .ok_or(ProgramError::InvalidArgument)?;
-        let spl_token_program = self
-            .spl_token_program
-            .ok_or(ProgramError::InvalidArgument)?;
+        let user_accounts = self.user_accounts.as_ref().ok_or(ProgramError::InvalidArgument)?;
+        let fee_accounts = self.fee_accounts.as_ref().ok_or(ProgramError::InvalidArgument)?;
+        let spl_token_program = self.spl_token_program.ok_or(ProgramError::InvalidArgument)?;
 
         for (account, quantity) in &[
             (fee_accounts.lqd_fee_account, fees.lqd_fee),
@@ -524,22 +479,10 @@ impl<'a, 'b> PoolContext<'a, 'b> {
     }
 
     /// Burns pool tokens from the requester for a redemption request.
-    pub(crate) fn burn_tokens_and_collect_fees(
-        &self,
-        redemption_size: u64,
-        fees: Fees,
-    ) -> Result<(), ProgramError> {
-        let user_accounts = self
-            .user_accounts
-            .as_ref()
-            .ok_or(ProgramError::InvalidArgument)?;
-        let fee_accounts = self
-            .fee_accounts
-            .as_ref()
-            .ok_or(ProgramError::InvalidArgument)?;
-        let spl_token_program = self
-            .spl_token_program
-            .ok_or(ProgramError::InvalidArgument)?;
+    pub(crate) fn burn_tokens_and_collect_fees(&self, redemption_size: u64, fees: Fees) -> Result<(), ProgramError> {
+        let user_accounts = self.user_accounts.as_ref().ok_or(ProgramError::InvalidArgument)?;
+        let fee_accounts = self.fee_accounts.as_ref().ok_or(ProgramError::InvalidArgument)?;
+        let spl_token_program = self.spl_token_program.ok_or(ProgramError::InvalidArgument)?;
 
         for (account, quantity) in &[
             (fee_accounts.lqd_fee_account, fees.lqd_fee),
@@ -603,19 +546,10 @@ impl<'a, 'b> PoolContext<'a, 'b> {
     }
 
     /// Transfers basket tokens from the pool to the user.
-    pub fn transfer_basket_to_user(
-        &self,
-        state: &PoolState,
-        basket: &Basket,
-    ) -> Result<(), ProgramError> {
-        let user_accounts = self
-            .user_accounts
-            .as_ref()
-            .ok_or(ProgramError::InvalidArgument)?;
+    pub fn transfer_basket_to_user(&self, state: &PoolState, basket: &Basket) -> Result<(), ProgramError> {
+        let user_accounts = self.user_accounts.as_ref().ok_or(ProgramError::InvalidArgument)?;
         let pool_vault_accounts = self.pool_vault_accounts;
-        let spl_token_program = self
-            .spl_token_program
-            .ok_or(ProgramError::InvalidArgument)?;
+        let spl_token_program = self.spl_token_program.ok_or(ProgramError::InvalidArgument)?;
 
         let zipped_iter = basket
             .quantities
@@ -635,9 +569,7 @@ impl<'a, 'b> PoolContext<'a, 'b> {
                 destination_pubkey,
                 authority_pubkey,
                 signer_pubkeys,
-                output_qty
-                    .try_into()
-                    .or(Err(ProgramError::InvalidArgument))?,
+                output_qty.try_into().or(Err(ProgramError::InvalidArgument))?,
             )?;
 
             let account_infos = &[
@@ -658,9 +590,9 @@ impl<'a, 'b> PoolContext<'a, 'b> {
     }
 }
 
-pub fn check_account_address(account: &AccountInfo, address: &Address) -> Result<(), ProgramError> {
-    if account.key != address.as_ref() {
-        msg!("Incorrect account address");
+pub fn check_account_address(account: &AccountInfo, address: &Pubkey, name: &str) -> Result<(), ProgramError> {
+    if account.key != address {
+        msg!("Incorrect {} account address", name);
         return Err(ProgramError::InvalidArgument);
     }
     Ok(())
@@ -694,8 +626,7 @@ pub fn check_token_account(
         return Err(ProgramError::InvalidArgument);
     }
     if let Some(authority) = authority {
-        if &token_account.owner != authority && token_account.delegate != COption::Some(*authority)
-        {
+        if &token_account.owner != authority && token_account.delegate != COption::Some(*authority) {
             msg!("Incorrect spl-token account owner");
             return Err(ProgramError::InvalidArgument);
         }
