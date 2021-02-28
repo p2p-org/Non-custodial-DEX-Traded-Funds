@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
+dotenv = "0.15.0"
 anyhow = "1.0.38"
 fund = { path = "../fund" }
 solana-program = "1.5.11"

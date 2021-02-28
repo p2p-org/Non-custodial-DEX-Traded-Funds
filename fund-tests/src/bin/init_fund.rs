@@ -1,7 +1,8 @@
-use std::str::FromStr;
+use std::{env, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use borsh::{de::BorshDeserialize, ser::BorshSerialize};
+use dotenv::dotenv;
 use fund::instruction::InitializeFundData;
 use fund::state::FundState;
 use fund_tests::{client::Client, token};
@@ -45,68 +46,96 @@ impl Print for Keypair {
 }
 
 fn main() -> Result<()> {
-    let fund_program_id = Pubkey::from_str("HWEaSAnjKNADwA2ZopatwCM5BqrnMCPQBKAphf1s6XNW")?;
+    dotenv().ok();
 
+    let fund_program_id = Pubkey::from_str(&env::var("FUND_PROGRAM_ID")?)?;
     let payer_account =
-        read_keypair_file("../../solana/alice.json").map_err(|err| anyhow!("Read keypair error: {}", err))?;
+        read_keypair_file(env::var("PAYER_KEYPAIR_FILE")?).map_err(|err| anyhow!("Read keypair error: {}", err))?;
 
-    let rpc_client = RpcClient::new_with_commitment("http://localhost:8899".into(), CommitmentConfig::confirmed());
+    let rpc_client = RpcClient::new_with_commitment(env::var("RPC_URL")?, CommitmentConfig::confirmed());
     let mut client = Client {
         client: rpc_client,
         payer: payer_account,
     };
 
-    let initializer_account = client
-        .create_account(&system_program::id(), 0)
-        .print_in_place("initializer_account");
+    let initializer_account = if let Ok(base58) = env::var("initializer_account") {
+        Keypair::from_base58_string(&base58)
+    } else {
+        client
+            .create_account(&system_program::id(), 0)
+            .print_in_place("initializer_account")
+    };
 
     // Create assets
-    let x_token_mint =
-        token::create_token(&mut client, &initializer_account.pubkey(), 2).print_in_place("x_token_mint");
+    let x_token_mint = if let Ok(base58) = env::var("x_token_mint") {
+        Keypair::from_base58_string(&base58)
+    } else {
+        token::create_token(&mut client, &initializer_account.pubkey(), 2).print_in_place("x_token_mint")
+    };
 
-    let y_token_mint =
-        token::create_token(&mut client, &initializer_account.pubkey(), 0).print_in_place("y_token_mint");
+    let y_token_mint = if let Ok(base58) = env::var("y_token_mint") {
+        Keypair::from_base58_string(&base58)
+    } else {
+        token::create_token(&mut client, &initializer_account.pubkey(), 0).print_in_place("y_token_mint")
+    };
 
-    let basic_token_mint =
-        token::create_token(&mut client, &initializer_account.pubkey(), 2).print_in_place("basic_token_mint");
+    let basic_token_mint = if let Ok(base58) = env::var("basic_token_mint") {
+        Keypair::from_base58_string(&base58)
+    } else {
+        token::create_token(&mut client, &initializer_account.pubkey(), 2).print_in_place("basic_token_mint")
+    };
 
     // Mint to user
-    let initializer_x_token_account =
-        token::create_account(&mut client, &initializer_account.pubkey(), &x_token_mint.pubkey())
-            .print_in_place("initializer_x_token_account");
+    let initializer_x_token_account = if let Ok(base58) = env::var("initializer_x_token_account") {
+        Keypair::from_base58_string(&base58)
+    } else {
+        let initializer_x_token_account =
+            token::create_account(&mut client, &initializer_account.pubkey(), &x_token_mint.pubkey())
+                .print_in_place("initializer_x_token_account");
+        token::mint_to(
+            &mut client,
+            &initializer_account,
+            &x_token_mint.pubkey(),
+            &initializer_x_token_account.pubkey(),
+            1000,
+            2,
+        );
+        initializer_x_token_account
+    };
 
-    let initializer_y_token_account =
-        token::create_account(&mut client, &initializer_account.pubkey(), &y_token_mint.pubkey())
-            .print_in_place("initializer_y_token_account");
+    let initializer_y_token_account = if let Ok(base58) = env::var("initializer_y_token_account") {
+        Keypair::from_base58_string(&base58)
+    } else {
+        let initializer_y_token_account =
+            token::create_account(&mut client, &initializer_account.pubkey(), &y_token_mint.pubkey())
+                .print_in_place("initializer_y_token_account");
+        token::mint_to(
+            &mut client,
+            &initializer_account,
+            &y_token_mint.pubkey(),
+            &initializer_y_token_account.pubkey(),
+            200,
+            0,
+        );
+        initializer_y_token_account
+    };
 
-    let initializer_basic_token_account =
-        token::create_account(&mut client, &initializer_account.pubkey(), &basic_token_mint.pubkey())
-            .print_in_place("initializer_basic_token_account");
-
-    token::mint_to(
-        &mut client,
-        &initializer_account,
-        &x_token_mint.pubkey(),
-        &initializer_x_token_account.pubkey(),
-        1000,
-        2,
-    );
-    token::mint_to(
-        &mut client,
-        &initializer_account,
-        &y_token_mint.pubkey(),
-        &initializer_y_token_account.pubkey(),
-        200,
-        0,
-    );
-    token::mint_to(
-        &mut client,
-        &initializer_account,
-        &basic_token_mint.pubkey(),
-        &initializer_basic_token_account.pubkey(),
-        100000,
-        2,
-    );
+    let _initializer_basic_token_account = if let Ok(base58) = env::var("initializer_basic_token_account") {
+        Keypair::from_base58_string(&base58)
+    } else {
+        let initializer_basic_token_account =
+            token::create_account(&mut client, &initializer_account.pubkey(), &basic_token_mint.pubkey())
+                .print_in_place("initializer_basic_token_account");
+        token::mint_to(
+            &mut client,
+            &initializer_account,
+            &basic_token_mint.pubkey(),
+            &initializer_basic_token_account.pubkey(),
+            100000,
+            2,
+        );
+        initializer_basic_token_account
+    };
 
     let fund_name = "Test fund";
 
@@ -172,12 +201,20 @@ fn main() -> Result<()> {
         pool_name: fund_name.to_string(),
         fee_rate: 1000,
         custom_data: InitializeFundData {
+            slippage_divider: 100,
             asset_weights: vec![7, 3],
             fund_token_initial_supply: 100,
         }
         .try_to_vec()
         .unwrap(),
     };
+
+    let data = PoolRequest {
+        tag: PoolRequestTag::default(),
+        inner: PoolRequestInner::Initialize(initialize_fund_request),
+    }
+    .try_to_vec()
+    .unwrap();
 
     let mut transaction = Transaction::new_with_payer(
         &[Instruction {
@@ -196,12 +233,7 @@ fn main() -> Result<()> {
                 AccountMeta::new_readonly(fund_basic_token_vault_account.pubkey(), false),
                 AccountMeta::new_readonly(spl_token::id(), false),
             ],
-            data: PoolRequest {
-                tag: PoolRequestTag::default(),
-                inner: PoolRequestInner::Initialize(initialize_fund_request),
-            }
-            .try_to_vec()
-            .unwrap(),
+            data,
         }],
         Some(&client.payer_pubkey()),
     );
