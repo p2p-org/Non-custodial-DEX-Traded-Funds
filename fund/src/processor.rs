@@ -1,6 +1,9 @@
+use std::convert::TryFrom;
+
 use borsh::{BorshDeserialize, BorshSerialize};
 use serum_pool::{
-    context::check_token_account,
+    context::{check_account_address, check_token_account},
+    next_account_infos,
     schema::{AssetInfo, Basket, InitializePoolRequest, PoolState, FEE_RATE_DENOMINATOR, MIN_FEE_RATE},
     Pool, PoolContext,
 };
@@ -16,6 +19,7 @@ use solana_program::{
 use spl_token::state::Account as TokenAccount;
 
 use crate::{
+    error::FundError,
     instruction::{FundInstruction, FundInstructionInner, InitializeFundData},
     state::{FundState, FundStateContainer},
 };
@@ -61,6 +65,11 @@ impl Pool for Fund {
             mint: basic_asset_token_account.mint.into(),
             vault_address: basic_asset_vault_account.key.into(),
         };
+        check_token_account(
+            basic_asset_vault_account,
+            basic_asset.mint.as_ref(),
+            Some(state.vault_signer.as_ref()),
+        )?;
 
         let fund_data: InitializeFundData = {
             let mut data = request.custom_data.as_slice();
@@ -198,11 +207,11 @@ impl Fund {
         pool_state: &mut PoolState,
         request: &FundInstructionInner,
     ) -> Result<(), ProgramError> {
-        let mut custom_state = pool_state.read_fund_state()?;
+        let mut fund_state = pool_state.read_fund_state()?;
 
         match request {
             FundInstructionInner::Pause => {
-                custom_state.paused = true;
+                fund_state.paused = true;
             }
             FundInstructionInner::Unpause => {
                 for asset in &pool_state.assets {
@@ -217,7 +226,158 @@ impl Fund {
                         return Err(ProgramError::InvalidArgument);
                     }
                 }
-                custom_state.paused = false;
+                fund_state.paused = false;
+            }
+            FundInstructionInner::Rebalance => {
+                if fund_state.paused {
+                    msg!("Fund is paused");
+                    return Err(ProgramError::InvalidArgument);
+                }
+
+                let pool_vaults = next_account_infos(accounts_iter, pool_state.assets.len())?;
+                let vault_signer = next_account_info(accounts_iter)?;
+                let basic_asset_vault = next_account_info(accounts_iter)?;
+                let spl_token_program = next_account_info(accounts_iter)?;
+                let token_swap = next_account_info(accounts_iter)?;
+                let swap_authority = next_account_info(accounts_iter)?;
+                let swap_assets = next_account_infos(accounts_iter, pool_state.assets.len())?;
+                let swap_basic_asset = next_account_info(accounts_iter)?;
+                let swap_pool_token_mint = next_account_info(accounts_iter)?;
+                let swap_fee = next_account_info(accounts_iter)?;
+                let swap_host_fee = next_account_info(accounts_iter).ok();
+
+                // Check
+                check_account_address(vault_signer, &pool_state.vault_signer, stringify!(vault_signer))?;
+                if token_swap.owner != &spl_token_swap::id() {
+                    msg!("Account not owned by spl-token-swap program");
+                    return Err(ProgramError::InvalidAccountData);
+                }
+                check_token_account(
+                    basic_asset_vault,
+                    &fund_state.basic_asset.mint,
+                    Some(&pool_state.vault_signer),
+                )?;
+                check_account_address(vault_signer, &pool_state.vault_signer, stringify!(vault_signer))?;
+                for ((asset, vault), swap_asset) in
+                    pool_state.assets.iter().zip(pool_vaults.iter()).zip(swap_assets.iter())
+                {
+                    check_account_address(vault, &asset.vault_address, stringify!(vault))?;
+                    check_token_account(vault, &asset.mint, Some(&pool_state.vault_signer))?;
+                    check_token_account(swap_asset, &asset.mint, Some(&pool_state.vault_signer))?;
+                }
+                check_token_account(
+                    swap_basic_asset,
+                    &fund_state.basic_asset.mint,
+                    Some(&pool_state.vault_signer),
+                )?;
+                if spl_token_program.key != &spl_token::ID {
+                    msg!("Incorrect spl-token program ID");
+                    return Err(ProgramError::InvalidArgument);
+                }
+
+                // Calc current amounts in the basic asset
+                let basic_asset_vault_token_account = TokenAccount::unpack(&basic_asset_vault.try_borrow_data()?)?;
+                let swap_basic_asset_token_account = TokenAccount::unpack(&swap_basic_asset.try_borrow_data()?)?;
+                let mut current_asset_amounts = Vec::with_capacity(pool_vaults.len());
+                let mut asset_vault_token_accounts = Vec::with_capacity(pool_vaults.len());
+                let mut total_amount = basic_asset_vault_token_account.amount as u128;
+
+                for (i, vault) in pool_vaults.iter().enumerate() {
+                    let vault_token_account = TokenAccount::unpack(&vault.try_borrow_data()?)?;
+                    let swap_asset_token_account = TokenAccount::unpack(&swap_assets[i].try_borrow_data()?)?;
+                    let amount = vault_token_account.amount as u128 * swap_asset_token_account.amount as u128
+                        / swap_basic_asset_token_account.amount as u128;
+
+                    total_amount += amount;
+                    let amount = u64::try_from(amount).map_err(|err| {
+                        msg!("Amount overflow: {}", err);
+                        FundError::OperationOverflow
+                    })?;
+                    current_asset_amounts.push(amount);
+                    asset_vault_token_accounts.push(vault_token_account);
+                }
+
+                // Calc needed amounts in the basic asset
+                let total_weight = fund_state
+                    .asset_weights
+                    .iter()
+                    .fold(0_u128, |sum, weight| sum + *weight as u128);
+                let mut to_buy = Vec::new();
+                let slippage_divider = 100; // todo: move to state
+
+                for (i, &amount) in current_asset_amounts.iter().enumerate() {
+                    let need_amount = u64::try_from(fund_state.asset_weights[i] as u128 * total_amount / total_weight)
+                        .map_err(|err| {
+                            msg!("Need amount overflow: {}", err);
+                            FundError::OperationOverflow
+                        })?;
+
+                    if need_amount < amount - amount / slippage_divider {
+                        // Sell
+                        let diff_amount = amount - need_amount;
+                        let amount_in = u64::try_from(
+                            diff_amount as u128 * asset_vault_token_accounts[i].amount as u128 / amount as u128,
+                        )
+                        .map_err(|err| {
+                            msg!("Amount in overflow: {}", err);
+                            FundError::OperationOverflow
+                        })?;
+                        let minimum_amount_out = diff_amount - diff_amount / slippage_divider;
+
+                        let swap_instruction = spl_token_swap::instruction::swap(
+                            &spl_token_swap::id(),
+                            &spl_token::id(),
+                            token_swap.key,
+                            swap_authority.key,
+                            &pool_state.vault_signer,
+                            pool_vaults[i].key,
+                            swap_assets[i].key,
+                            swap_basic_asset.key,
+                            basic_asset_vault.key,
+                            swap_pool_token_mint.key,
+                            swap_fee.key,
+                            swap_host_fee.map(|info| info.key),
+                            spl_token_swap::instruction::Swap {
+                                amount_in,
+                                minimum_amount_out,
+                            },
+                        )
+                        .map_err(|err| {
+                            msg!("Create swap instruction error for token {}: {}", i, err);
+                            err
+                        })?;
+
+                        let mut account_infos = vec![
+                            token_swap.clone(),
+                            swap_authority.clone(),
+                            vault_signer.clone(),
+                            pool_vaults[i].clone(),
+                            swap_assets[i].clone(),
+                            swap_basic_asset.clone(),
+                            basic_asset_vault.clone(),
+                            swap_pool_token_mint.clone(),
+                            swap_fee.clone(),
+                            spl_token_program.clone(),
+                        ];
+                        if let Some(swap_host_fee) = swap_host_fee.cloned() {
+                            account_infos.push(swap_host_fee);
+                        }
+
+                        invoke_signed(
+                            &swap_instruction,
+                            &account_infos,
+                            &[&[pool_account.key.as_ref(), &[pool_state.vault_signer_nonce]]],
+                        )
+                        .map_err(|err| {
+                            msg!("Invoke swap error for token {}: {}", i, err);
+                            err
+                        })?;
+                    } else if need_amount > amount + amount / slippage_divider {
+                        to_buy.push((i, need_amount - amount));
+                    }
+                }
+
+                // Buy
             }
             FundInstructionInner::ApproveDelegate { amount } => {
                 let vault_account = next_account_info(accounts_iter)?;
@@ -242,7 +402,7 @@ impl Fund {
                     return Err(ProgramError::InvalidArgument);
                 }
 
-                custom_state.paused = true;
+                fund_state.paused = true;
 
                 let instruction = spl_token::instruction::approve(
                     &spl_token::ID,
@@ -327,7 +487,7 @@ impl Fund {
             }
         };
 
-        pool_state.write_fund_state(&custom_state)?;
+        pool_state.write_fund_state(&fund_state)?;
 
         Ok(())
     }

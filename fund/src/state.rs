@@ -5,6 +5,7 @@ use solana_program::{msg, program_error::ProgramError};
 #[derive(Clone, PartialEq, Eq, Debug, BorshSerialize, BorshDeserialize, BorshSchema, Default)]
 pub struct FundState {
     pub paused: bool,
+    pub slippage_divider: u64,
     pub asset_weights: Vec<u32>,
     pub basic_asset: AssetInfo,
 }
@@ -46,6 +47,7 @@ pub fn calc_len(name: impl Into<String>, assets_count: usize) -> usize {
     state
         .write_fund_state(&FundState {
             paused: false,
+            slippage_divider: 100,
             asset_weights: vec![1; assets_count],
             basic_asset: Default::default(),
         })

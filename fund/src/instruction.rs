@@ -9,10 +9,11 @@ declare_tag!(FundInstructionTag, u64, 0x112ea41452f06767);
 ///
 /// - `[writable]` Fund admin account
 /// - `[writable]` Initial supply fund token account
-/// - `[]` Fund vault account of basic asset
+/// - `[writable]` Fund vault account of basic asset
 /// - `[]` spl-token program account
 #[derive(Clone, PartialEq, Eq, Debug, Default, BorshSerialize, BorshDeserialize)]
 pub struct InitializeFundData {
+    pub slippage_divider: u64,
     pub asset_weights: Vec<u32>,
     pub fund_token_initial_supply: u64,
 }
@@ -42,6 +43,24 @@ pub enum FundInstructionInner {
     /// - `[signer]` Admin account
     /// - `[]` Pool vault account for each of the pool assets
     Unpause,
+
+    /// Rebalances the fund basket.
+    ///
+    /// Accounts:
+    ///
+    /// - `[writable]` Pool account
+    /// - `[signer]` Admin account
+    /// - `[writable]` Pool vault account for each of the N pool assets
+    /// - `[]` Pool vault authority
+    /// - `[writable]` Fund vault account of basic asset
+    /// - `[]` Token-swap
+    /// - `[]` Swap authority
+    /// - `[writable]` Swap accounts for each of the N pool assets
+    /// - `[writable]` Swap basic asset account
+    /// - `[writable]` Swap pool token mint, to generate trading fees
+    /// - `[writable]` Swap fee account, to receive trading fees
+    /// - `[optional, writable]` Swap host fee account to receive additional trading fees
+    Rebalance,
 
     /// Approves an account to spend tokens on behalf of the pool.
     ///

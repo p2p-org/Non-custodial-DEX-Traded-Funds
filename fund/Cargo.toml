@@ -7,9 +7,11 @@ edition = "2018"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
+thiserror = "1.0.24"
 solana-program = "1.5.8"
 serum-pool = { path = "../serum-pool" }
 spl-token = { version = "3.1.0", features = ["no-entrypoint"] }
+spl-token-swap = { git = "https://github.com/solana-labs/solana-program-library.git", features = ["no-entrypoint"] }
 serum-borsh = "0.8.1-serum.1"
 
 [features]
