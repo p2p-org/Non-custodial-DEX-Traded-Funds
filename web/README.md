@@ -6,10 +6,10 @@ If you'd rather build the application yourself, please ensure you have nodejs/np
 
 ```
 git clone https://github.com/p2p-org/Non-custodial-DEX-Traded-Funds/
-cd cd Non-custodial-DEX-Traded-Funds
+cd cd Non-custodial-DEX-Traded-Funds/web
 yarn install
 yarn start //to start a development
- yarn build //to create a production build 
+yarn build //to create a production build 
 ```
 
 # Contributing
