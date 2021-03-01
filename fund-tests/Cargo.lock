@@ -981,6 +981,7 @@ dependencies = [
  "solana-program-test",
  "solana-sdk",
  "spl-token 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "spl-token-swap",
  "tokio 0.3.7",
 ]
 

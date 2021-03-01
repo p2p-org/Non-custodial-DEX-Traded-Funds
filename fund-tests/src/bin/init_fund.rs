@@ -43,81 +43,27 @@ fn main() -> Result<()> {
             .print_in_place("initializer_account")
     };
 
-    // Create assets
-    let x_token_mint = if let Ok(base58) = env::var("x_token_mint") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 2).print_in_place("x_token_mint")
-    };
+    let sol_token_mint = Keypair::from_base58_string(&env::var("sol_token_mint")?);
+    let ftt_token_mint = Keypair::from_base58_string(&env::var("ftt_token_mint")?);
+    let ren_token_mint = Keypair::from_base58_string(&env::var("ren_token_mint")?);
+    let srm_token_mint = Keypair::from_base58_string(&env::var("srm_token_mint")?);
+    let sushi_token_mint = Keypair::from_base58_string(&env::var("sushi_token_mint")?);
+    let ray_token_mint = Keypair::from_base58_string(&env::var("ray_token_mint")?);
+    let fida_token_mint = Keypair::from_base58_string(&env::var("fida_token_mint")?);
+    let usdc_token_mint = Keypair::from_base58_string(&env::var("usdc_token_mint")?);
 
-    let y_token_mint = if let Ok(base58) = env::var("y_token_mint") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 0).print_in_place("y_token_mint")
-    };
+    let initializer_sol_token_account = Keypair::from_base58_string(&env::var("initializer_sol_token_account")?);
+    let initializer_ftt_token_account = Keypair::from_base58_string(&env::var("initializer_ftt_token_account")?);
+    let initializer_ren_token_account = Keypair::from_base58_string(&env::var("initializer_ren_token_account")?);
+    let initializer_srm_token_account = Keypair::from_base58_string(&env::var("initializer_srm_token_account")?);
+    let initializer_sushi_token_account = Keypair::from_base58_string(&env::var("initializer_sushi_token_account")?);
+    let initializer_ray_token_account = Keypair::from_base58_string(&env::var("initializer_ray_token_account")?);
+    let initializer_fida_token_account = Keypair::from_base58_string(&env::var("initializer_fida_token_account")?);
 
-    let basic_token_mint = if let Ok(base58) = env::var("basic_token_mint") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 2).print_in_place("basic_token_mint")
-    };
-
-    // Mint to user
-    let initializer_x_token_account = if let Ok(base58) = env::var("initializer_x_token_account") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        let initializer_x_token_account =
-            token::create_account(&mut client, &initializer_account.pubkey(), &x_token_mint.pubkey())
-                .print_in_place("initializer_x_token_account");
-        token::mint_to(
-            &mut client,
-            &initializer_account,
-            &x_token_mint.pubkey(),
-            &initializer_x_token_account.pubkey(),
-            1000,
-            2,
-        );
-        initializer_x_token_account
-    };
-
-    let initializer_y_token_account = if let Ok(base58) = env::var("initializer_y_token_account") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        let initializer_y_token_account =
-            token::create_account(&mut client, &initializer_account.pubkey(), &y_token_mint.pubkey())
-                .print_in_place("initializer_y_token_account");
-        token::mint_to(
-            &mut client,
-            &initializer_account,
-            &y_token_mint.pubkey(),
-            &initializer_y_token_account.pubkey(),
-            200,
-            0,
-        );
-        initializer_y_token_account
-    };
-
-    let _initializer_basic_token_account = if let Ok(base58) = env::var("initializer_basic_token_account") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        let initializer_basic_token_account =
-            token::create_account(&mut client, &initializer_account.pubkey(), &basic_token_mint.pubkey())
-                .print_in_place("initializer_basic_token_account");
-        token::mint_to(
-            &mut client,
-            &initializer_account,
-            &basic_token_mint.pubkey(),
-            &initializer_basic_token_account.pubkey(),
-            100000,
-            2,
-        );
-        initializer_basic_token_account
-    };
-
-    let fund_name = "Test fund";
+    let fund_name = "Test DTF";
 
     // Create fund accounts
-    let fund_account_data_len = fund::state::calc_len(fund_name, 2);
+    let fund_account_data_len = fund::state::calc_len(fund_name, 7);
     let fund_account = client
         .create_account(&fund_program_id, fund_account_data_len)
         .print_in_place("fund_account");
@@ -127,41 +73,112 @@ fn main() -> Result<()> {
     println!("fund_vault_authority: {}, seed: {}", fund_vault_authority, seed);
 
     // Create fund token
-    let fund_token_mint = token::create_token(&mut client, &fund_vault_authority, 0).print_in_place("fund_token_mint");
+    let fund_token_mint = token::create_token(&mut client, &fund_vault_authority, 6).print_in_place("fund_token_mint");
 
     let initial_supply_fund_token_account =
         token::create_account(&mut client, &fund_vault_authority, &fund_token_mint.pubkey())
             .print_in_place("initial_supply_fund_token_account");
 
-    let fund_x_token_vault_account = token::create_account(&mut client, &fund_vault_authority, &x_token_mint.pubkey())
-        .print_in_place("fund_x_token_vault_account");
+    let fund_sol_token_vault_account =
+        token::create_account(&mut client, &fund_vault_authority, &sol_token_mint.pubkey())
+            .print_in_place("fund_sol_token_vault_account");
 
-    let fund_y_token_vault_account = token::create_account(&mut client, &fund_vault_authority, &y_token_mint.pubkey())
-        .print_in_place("fund_y_token_vault_account");
+    let fund_ftt_token_vault_account =
+        token::create_account(&mut client, &fund_vault_authority, &ftt_token_mint.pubkey())
+            .print_in_place("fund_ftt_token_vault_account");
 
-    let fund_basic_token_vault_account =
-        token::create_account(&mut client, &fund_vault_authority, &basic_token_mint.pubkey())
-            .print_in_place("fund_basic_token_vault_account");
+    let fund_ren_token_vault_account =
+        token::create_account(&mut client, &fund_vault_authority, &ren_token_mint.pubkey())
+            .print_in_place("fund_ren_token_vault_account");
+
+    let fund_srm_token_vault_account =
+        token::create_account(&mut client, &fund_vault_authority, &srm_token_mint.pubkey())
+            .print_in_place("fund_srm_token_vault_account");
+
+    let fund_sushi_token_vault_account =
+        token::create_account(&mut client, &fund_vault_authority, &sushi_token_mint.pubkey())
+            .print_in_place("fund_sushi_token_vault_account");
+
+    let fund_ray_token_vault_account =
+        token::create_account(&mut client, &fund_vault_authority, &ray_token_mint.pubkey())
+            .print_in_place("fund_ray_token_vault_account");
+
+    let fund_fida_token_vault_account =
+        token::create_account(&mut client, &fund_vault_authority, &fida_token_mint.pubkey())
+            .print_in_place("fund_fida_token_vault_account");
+
+    let fund_usdc_token_vault_account =
+        token::create_account(&mut client, &fund_vault_authority, &usdc_token_mint.pubkey())
+            .print_in_place("fund_usdc_token_vault_account");
+
+    let asset_weights = vec![394, 257, 98, 28, 211, 8, 4];
 
     // Transfer initial assets to fund
     token::transfer_to(
         &mut client,
         &initializer_account,
-        &x_token_mint.pubkey(),
-        &initializer_x_token_account.pubkey(),
-        &fund_x_token_vault_account.pubkey(),
-        70,
-        2,
+        &sol_token_mint.pubkey(),
+        &initializer_sol_token_account.pubkey(),
+        &fund_sol_token_vault_account.pubkey(),
+        394,
+        6,
     );
     token::transfer_to(
         &mut client,
         &initializer_account,
-        &y_token_mint.pubkey(),
-        &initializer_y_token_account.pubkey(),
-        &fund_y_token_vault_account.pubkey(),
-        30,
-        0,
+        &ftt_token_mint.pubkey(),
+        &initializer_ftt_token_account.pubkey(),
+        &fund_ftt_token_vault_account.pubkey(),
+        257,
+        6,
     );
+    token::transfer_to(
+        &mut client,
+        &initializer_account,
+        &ren_token_mint.pubkey(),
+        &initializer_ren_token_account.pubkey(),
+        &fund_ren_token_vault_account.pubkey(),
+        98,
+        6,
+    );
+    token::transfer_to(
+        &mut client,
+        &initializer_account,
+        &srm_token_mint.pubkey(),
+        &initializer_srm_token_account.pubkey(),
+        &fund_srm_token_vault_account.pubkey(),
+        28,
+        6,
+    );
+    token::transfer_to(
+        &mut client,
+        &initializer_account,
+        &sushi_token_mint.pubkey(),
+        &initializer_sushi_token_account.pubkey(),
+        &fund_sushi_token_vault_account.pubkey(),
+        211,
+        6,
+    );
+    token::transfer_to(
+        &mut client,
+        &initializer_account,
+        &ray_token_mint.pubkey(),
+        &initializer_ray_token_account.pubkey(),
+        &fund_ray_token_vault_account.pubkey(),
+        8,
+        6,
+    );
+    token::transfer_to(
+        &mut client,
+        &initializer_account,
+        &fida_token_mint.pubkey(),
+        &initializer_fida_token_account.pubkey(),
+        &fund_fida_token_vault_account.pubkey(),
+        4,
+        6,
+    );
+
+    let fund_token_initial_supply = asset_weights.iter().sum::<u32>() as u64;
 
     // Fees
     let initializer_fee_account =
@@ -174,13 +191,13 @@ fn main() -> Result<()> {
     // Create fund
     let initialize_fund_request = InitializePoolRequest {
         vault_signer_nonce: seed,
-        assets_length: 2,
+        assets_length: 7,
         pool_name: fund_name.to_string(),
         fee_rate: 1000,
         custom_data: InitializeFundData {
             slippage_divider: 100,
-            asset_weights: vec![7, 3],
-            fund_token_initial_supply: 100,
+            asset_weights: asset_weights.clone(),
+            fund_token_initial_supply,
         }
         .try_to_vec()?,
     };
@@ -197,15 +214,20 @@ fn main() -> Result<()> {
             accounts: vec![
                 AccountMeta::new(fund_account.pubkey(), false),
                 AccountMeta::new(fund_token_mint.pubkey(), false),
-                AccountMeta::new(fund_x_token_vault_account.pubkey(), false),
-                AccountMeta::new(fund_y_token_vault_account.pubkey(), false),
+                AccountMeta::new(fund_sol_token_vault_account.pubkey(), false),
+                AccountMeta::new(fund_ftt_token_vault_account.pubkey(), false),
+                AccountMeta::new(fund_ren_token_vault_account.pubkey(), false),
+                AccountMeta::new(fund_srm_token_vault_account.pubkey(), false),
+                AccountMeta::new(fund_sushi_token_vault_account.pubkey(), false),
+                AccountMeta::new(fund_ray_token_vault_account.pubkey(), false),
+                AccountMeta::new(fund_fida_token_vault_account.pubkey(), false),
                 AccountMeta::new_readonly(fund_vault_authority, false),
                 AccountMeta::new_readonly(lqd_fee_account.pubkey(), false),
                 AccountMeta::new_readonly(initializer_fee_account.pubkey(), false),
                 AccountMeta::new_readonly(sysvar::rent::id(), false),
                 AccountMeta::new(initializer_account.pubkey(), false),
                 AccountMeta::new(initial_supply_fund_token_account.pubkey(), false),
-                AccountMeta::new_readonly(fund_basic_token_vault_account.pubkey(), false),
+                AccountMeta::new_readonly(fund_usdc_token_vault_account.pubkey(), false),
                 AccountMeta::new_readonly(spl_token::id(), false),
             ],
             data,
@@ -224,7 +246,7 @@ fn main() -> Result<()> {
     let pool_state: PoolState = BorshDeserialize::deserialize(&mut data)?;
     assert_eq!(pool_state.tag, PoolStateTag::default());
     assert_eq!(pool_state.pool_token_mint.as_ref(), &fund_token_mint.pubkey());
-    assert_eq!(pool_state.assets.len(), 2);
+    assert_eq!(pool_state.assets.len(), 7);
     assert_eq!(pool_state.vault_signer.as_ref(), &fund_vault_authority);
     assert_eq!(pool_state.vault_signer_nonce, seed);
     assert_eq!(pool_state.name.as_str(), fund_name);
@@ -233,17 +255,17 @@ fn main() -> Result<()> {
     let mut data = pool_state.custom_state.as_slice();
     let fund_state: FundState = BorshDeserialize::deserialize(&mut data)?;
     assert_eq!(fund_state.paused, false);
-    assert_eq!(fund_state.asset_weights, vec![7, 3]);
-    assert_eq!(fund_state.basic_asset.mint.as_ref(), &basic_token_mint.pubkey());
+    assert_eq!(fund_state.asset_weights, asset_weights);
+    assert_eq!(fund_state.basic_asset.mint.as_ref(), &usdc_token_mint.pubkey());
     assert_eq!(
         fund_state.basic_asset.vault_address.as_ref(),
-        &fund_basic_token_vault_account.pubkey()
+        &fund_usdc_token_vault_account.pubkey()
     );
 
     let balance = client.get_token_account_balance(&initial_supply_fund_token_account.pubkey())?;
     let fund_token_account = client.get_account(&initial_supply_fund_token_account.pubkey())?;
 
-    assert_eq!(balance.ui_amount, 100.0);
+    assert_eq!(balance.ui_amount, fund_token_initial_supply as f64 / 1000000.0);
     assert_eq!(fund_token_account.owner, spl_token::id());
     assert_eq!(fund_token_account.executable, false);
 

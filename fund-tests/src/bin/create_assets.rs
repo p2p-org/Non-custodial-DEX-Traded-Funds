@@ -1,14 +1,15 @@
-use std::env;
+use std::{env, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use dotenv::dotenv;
 use fund_tests::{client::Client, print::Print, token};
 use solana_client::rpc_client::RpcClient;
-use solana_program::{pubkey::Pubkey, system_program};
+use solana_program::{program_pack::Pack, pubkey::Pubkey, system_program};
 use solana_sdk::{
     commitment_config::CommitmentConfig,
     signature::{read_keypair_file, Keypair, Signer},
 };
+use spl_token_swap::curve::fees::Fees;
 
 fn main() -> Result<()> {
     dotenv().ok();
@@ -31,48 +32,48 @@ fn main() -> Result<()> {
     };
 
     // Create assets
-    // MakerDAO, AAVE, Compound, Curve, UniSwap, Synthetix, Balancer, USDC
+    // SOL, FTT, REN, SRM, SUSHI, RAY, FIDA, USDC
 
-    let maker_dao_token_mint = if let Ok(base58) = env::var("maker_dao_token_mint") {
+    let sol_token_mint = if let Ok(base58) = env::var("sol_token_mint") {
         Keypair::from_base58_string(&base58)
     } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("maker_dao_token_mint")
+        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("sol_token_mint")
     };
 
-    let aave_token_mint = if let Ok(base58) = env::var("aave_token_mint") {
+    let ftt_token_mint = if let Ok(base58) = env::var("ftt_token_mint") {
         Keypair::from_base58_string(&base58)
     } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("aave_token_mint")
+        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("ftt_token_mint")
     };
 
-    let compound_token_mint = if let Ok(base58) = env::var("compound_token_mint") {
+    let ren_token_mint = if let Ok(base58) = env::var("ren_token_mint") {
         Keypair::from_base58_string(&base58)
     } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("compound_token_mint")
+        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("ren_token_mint")
     };
 
-    let curve_token_mint = if let Ok(base58) = env::var("curve_token_mint") {
+    let srm_token_mint = if let Ok(base58) = env::var("srm_token_mint") {
         Keypair::from_base58_string(&base58)
     } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("curve_token_mint")
+        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("srm_token_mint")
     };
 
-    let uni_swap_token_mint = if let Ok(base58) = env::var("uni_swap_token_mint") {
+    let sushi_token_mint = if let Ok(base58) = env::var("sushi_token_mint") {
         Keypair::from_base58_string(&base58)
     } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("uni_swap_token_mint")
+        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("sushi_token_mint")
     };
 
-    let synthetix_token_mint = if let Ok(base58) = env::var("synthetix_token_mint") {
+    let ray_token_mint = if let Ok(base58) = env::var("ray_token_mint") {
         Keypair::from_base58_string(&base58)
     } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("synthetix_token_mint")
+        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("ray_token_mint")
     };
 
-    let balancer_token_mint = if let Ok(base58) = env::var("balancer_token_mint") {
+    let fida_token_mint = if let Ok(base58) = env::var("fida_token_mint") {
         Keypair::from_base58_string(&base58)
     } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("balancer_token_mint")
+        token::create_token(&mut client, &initializer_account.pubkey(), 6).print_in_place("fida_token_mint")
     };
 
     let usdc_token_mint = if let Ok(base58) = env::var("usdc_token_mint") {
@@ -83,52 +84,52 @@ fn main() -> Result<()> {
 
     // Mint to initializer
 
-    let initializer_maker_dao_token_account = mint_to(
+    let initializer_sol_token_account = mint_to(
         &initializer_account,
-        "initializer_maker_dao_token_account",
-        &maker_dao_token_mint.pubkey(),
+        "initializer_sol_token_account",
+        &sol_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_aave_token_account = mint_to(
+    let initializer_ftt_token_account = mint_to(
         &initializer_account,
-        "initializer_aave_token_account",
-        &aave_token_mint.pubkey(),
+        "initializer_ftt_token_account",
+        &ftt_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_compound_token_account = mint_to(
+    let initializer_ren_token_account = mint_to(
         &initializer_account,
-        "initializer_compound_token_account",
-        &compound_token_mint.pubkey(),
+        "initializer_ren_token_account",
+        &ren_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_curve_token_account = mint_to(
+    let initializer_srm_token_account = mint_to(
         &initializer_account,
-        "initializer_curve_token_account",
-        &curve_token_mint.pubkey(),
+        "initializer_srm_token_account",
+        &srm_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_uni_swap_token_account = mint_to(
+    let initializer_sushi_token_account = mint_to(
         &initializer_account,
-        "initializer_uni_swap_token_account",
-        &uni_swap_token_mint.pubkey(),
+        "initializer_sushi_token_account",
+        &sushi_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_synthetix_token_account = mint_to(
+    let initializer_ray_token_account = mint_to(
         &initializer_account,
-        "initializer_synthetix_token_account",
-        &synthetix_token_mint.pubkey(),
+        "initializer_ray_token_account",
+        &ray_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_balancer_token_account = mint_to(
+    let initializer_fida_token_account = mint_to(
         &initializer_account,
-        "initializer_balancer_token_account",
-        &balancer_token_mint.pubkey(),
+        "initializer_fida_token_account",
+        &fida_token_mint.pubkey(),
         &mut client,
     );
 
@@ -139,22 +140,47 @@ fn main() -> Result<()> {
         &mut client,
     );
 
-    let balance = client.get_token_account_balance(&initializer_maker_dao_token_account.pubkey())?;
-    assert_eq!(balance.ui_amount, 10_000.0);
-    let balance = client.get_token_account_balance(&initializer_aave_token_account.pubkey())?;
-    assert_eq!(balance.ui_amount, 10_000.0);
-    let balance = client.get_token_account_balance(&initializer_compound_token_account.pubkey())?;
-    assert_eq!(balance.ui_amount, 10_000.0);
-    let balance = client.get_token_account_balance(&initializer_curve_token_account.pubkey())?;
-    assert_eq!(balance.ui_amount, 10_000.0);
-    let balance = client.get_token_account_balance(&initializer_uni_swap_token_account.pubkey())?;
-    assert_eq!(balance.ui_amount, 10_000.0);
-    let balance = client.get_token_account_balance(&initializer_synthetix_token_account.pubkey())?;
-    assert_eq!(balance.ui_amount, 10_000.0);
-    let balance = client.get_token_account_balance(&initializer_balancer_token_account.pubkey())?;
-    assert_eq!(balance.ui_amount, 10_000.0);
-    let balance = client.get_token_account_balance(&initializer_usdc_token_account.pubkey())?;
-    assert_eq!(balance.ui_amount, 10_000.0);
+    let fees = Fees {
+        trade_fee_numerator: 1,
+        trade_fee_denominator: 1000,
+        owner_trade_fee_numerator: 1,
+        owner_trade_fee_denominator: 1000,
+        owner_withdraw_fee_numerator: 1,
+        owner_withdraw_fee_denominator: 1000,
+        host_fee_numerator: 1,
+        host_fee_denominator: 1000,
+    };
+
+    let swap_program_id = if let Ok(key) = env::var("SWAP_PROGRAM_ID") {
+        Pubkey::from_str(&key).unwrap()
+    } else {
+        spl_token_swap::id()
+    };
+
+    let sol_usdc_swap = client.create_account(&swap_program_id, spl_token_swap::state::SwapV1::LEN);
+    let (sol_usdc_swap_authority, sol_usdc_swap_authority_nonce) = if let (Ok(authority), Ok(authority_nonce)) = (
+        env::var("sol_usdc_swap_authority"),
+        env::var("sol_usdc_swap_authority_nonce"),
+    ) {
+        (Pubkey::from_str(&authority)?, authority_nonce.parse()?)
+    } else {
+        Pubkey::find_program_address(&[sol_usdc_swap.pubkey().as_ref()], &swap_program_id)
+    };
+    let swap_token_sol = token::create_account(&mut client, &sol_usdc_swap_authority, &sol_token_mint.pubkey());
+    let swap_token_usdc = token::create_account(&mut client, &sol_usdc_swap_authority, &usdc_token_mint.pubkey());
+
+    let sol_usdc_swap = token::create_swap(
+        &mut client,
+        &swap_program_id,
+        &sol_usdc_swap,
+        &sol_usdc_swap_authority,
+        sol_usdc_swap_authority_nonce,
+        &sol_token_mint.pubkey(),
+        &usdc_token_mint.pubkey(),
+        &initializer_account.pubkey(),
+        fees.clone(),
+    )
+    .print("sol_usdc_swap");
 
     Ok(())
 }
