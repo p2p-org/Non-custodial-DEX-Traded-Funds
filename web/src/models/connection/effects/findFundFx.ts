@@ -1,4 +1,3 @@
-import assert from 'assert';
 import { PublicKey } from '@solana/web3.js';
 import { getConnection } from 'api/connection';
 import { findFundFx } from '..';
