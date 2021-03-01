@@ -1,6 +1,7 @@
 # 🏗 Non-custodial DEX Traded Funds (DTFs)
 
-[GitBook documentation](https://http-github-com-p2p-org.gitbook.io/non-custodial-dex-traded-funds/)
+### [📖 GitBook documentation](https://http-github-com-p2p-org.gitbook.io/non-custodial-dex-traded-funds/) 
+### [🤖 Live Demo](https://p2p-org.github.io/Non-custodial-DEX-Traded-Funds/)
 
 ## Overview
 
