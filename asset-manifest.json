@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/Non-custodial-DEX-Traded-Funds/static/css/main.7bc3fde4.chunk.css",
-    "main.js": "/Non-custodial-DEX-Traded-Funds/static/js/main.a1782b96.chunk.js",
-    "main.js.map": "/Non-custodial-DEX-Traded-Funds/static/js/main.a1782b96.chunk.js.map",
+    "main.js": "/Non-custodial-DEX-Traded-Funds/static/js/main.1f0e228f.chunk.js",
+    "main.js.map": "/Non-custodial-DEX-Traded-Funds/static/js/main.1f0e228f.chunk.js.map",
     "runtime-main.js": "/Non-custodial-DEX-Traded-Funds/static/js/runtime-main.2b62ce81.js",
     "runtime-main.js.map": "/Non-custodial-DEX-Traded-Funds/static/js/runtime-main.2b62ce81.js.map",
     "static/js/2.79bf4131.chunk.js": "/Non-custodial-DEX-Traded-Funds/static/js/2.79bf4131.chunk.js",
@@ -28,6 +28,6 @@
     "static/js/runtime-main.2b62ce81.js",
     "static/js/2.79bf4131.chunk.js",
     "static/css/main.7bc3fde4.chunk.css",
-    "static/js/main.a1782b96.chunk.js"
+    "static/js/main.1f0e228f.chunk.js"
   ]
 }
