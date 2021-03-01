@@ -3,8 +3,10 @@ use std::{env, str::FromStr};
 use anyhow::{anyhow, Result};
 use borsh::{de::BorshDeserialize, ser::BorshSerialize};
 use dotenv::dotenv;
-use fund::instruction::InitializeFundData;
-use fund::state::FundState;
+use fund::{
+    instruction::{FundInstructionInner, FundRequest, FundRequestTag, InitializeFundData},
+    state::FundState,
+};
 use fund_tests::{client::Client, print::Print, token};
 use serum_pool::schema::{
     fee_owner::ID as POOL_FEE_OWNER_ID, InitializePoolRequest, PoolRequest, PoolRequestInner, PoolRequestTag,
@@ -171,23 +173,9 @@ fn main() -> Result<()> {
     let lqd_fee_account = token::create_account(&mut client, &POOL_FEE_OWNER_ID, &fund_token_mint.pubkey())
         .print_in_place("lqd_fee_account");
 
-    // Create fund
-    let initialize_fund_request = InitializePoolRequest {
-        vault_signer_nonce: seed,
-        assets_length: 2,
-        pool_name: fund_name.to_string(),
-        fee_rate: 1000,
-        custom_data: InitializeFundData {
-            slippage_divider: 100,
-            asset_weights: vec![7, 3],
-            fund_token_initial_supply: 100,
-        }
-        .try_to_vec()?,
-    };
-
-    let data = PoolRequest {
-        tag: PoolRequestTag::default(),
-        inner: PoolRequestInner::Initialize(initialize_fund_request),
+    let data = FundRequest {
+        tag: FundRequestTag::default(),
+        inner: FundInstructionInner::Rebalance,
     }
     .try_to_vec()?;
 
@@ -215,13 +203,13 @@ fn main() -> Result<()> {
     transaction.sign(&[client.payer()], client.recent_blockhash());
     client.process_transaction(&transaction);
 
-    let fund_account = client.get_account(&fund_account.pubkey())?;
+    let fund_account = client.get_account(&fund_account.pubkey()).unwrap();
 
     assert_eq!(fund_account.owner, fund_program_id);
     assert_eq!(fund_account.executable, false);
 
     let mut data = fund_account.data.as_slice();
-    let pool_state: PoolState = BorshDeserialize::deserialize(&mut data)?;
+    let pool_state: PoolState = BorshDeserialize::deserialize(&mut data).unwrap();
     assert_eq!(pool_state.tag, PoolStateTag::default());
     assert_eq!(pool_state.pool_token_mint.as_ref(), &fund_token_mint.pubkey());
     assert_eq!(pool_state.assets.len(), 2);
@@ -231,7 +219,7 @@ fn main() -> Result<()> {
     assert_eq!(pool_state.fee_rate, 1000);
 
     let mut data = pool_state.custom_state.as_slice();
-    let fund_state: FundState = BorshDeserialize::deserialize(&mut data)?;
+    let fund_state: FundState = BorshDeserialize::deserialize(&mut data).unwrap();
     assert_eq!(fund_state.paused, false);
     assert_eq!(fund_state.asset_weights, vec![7, 3]);
     assert_eq!(fund_state.basic_asset.mint.as_ref(), &basic_token_mint.pubkey());
@@ -240,8 +228,10 @@ fn main() -> Result<()> {
         &fund_basic_token_vault_account.pubkey()
     );
 
-    let balance = client.get_token_account_balance(&initial_supply_fund_token_account.pubkey())?;
-    let fund_token_account = client.get_account(&initial_supply_fund_token_account.pubkey())?;
+    let balance = client
+        .get_token_account_balance(&initial_supply_fund_token_account.pubkey())
+        .unwrap();
+    let fund_token_account = client.get_account(&initial_supply_fund_token_account.pubkey()).unwrap();
 
     assert_eq!(balance.ui_amount, 100.0);
     assert_eq!(fund_token_account.owner, spl_token::id());
