@@ -1,7 +1,8 @@
-import React, { FC } from 'react';
+import React, { FC, useMemo } from 'react';
 
 import { styled } from '@linaria/react';
 import classNames from 'classnames';
+import { PublicKeyAndAccount } from '@solana/web3.js';
 import { Button } from 'components/ui/Button';
 
 import { Avatar } from 'components/common/Avatar';
@@ -11,6 +12,9 @@ import {
   MODAL_WITHDRAW,
 } from 'components/common/ModalManager/constants';
 import { Column } from '../common/Column';
+import { PoolState } from '../../../../../../js/lib/fund';
+import { shortAddress } from '../../../../utils/common';
+import { TOKENS } from '../../../../config';
 
 const TopWrapper = styled.div`
   display: flex;
@@ -87,7 +91,7 @@ const Wrapper = styled.div`
   transition: box-shadow 100ms cubic-bezier(0.64, 0, 0.35, 1) 0s;
 
   &:hover {
-    box-shadow: 0 8px 24px #d1d1d1;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 
     ${ColumnButtons} {
       opacity: 1;
@@ -140,9 +144,11 @@ const TokenShareValue = styled.div`
   font-weight: 400;
 `;
 
-interface Props {}
+interface Props {
+  fund: PublicKeyAndAccount<PoolState>;
+}
 
-export const FundRow: FC<Props> = (props) => {
+export const FundRow: FC<Props> = ({ fund }) => {
   const handleOpenInvestModalClick = () => {
     openModalFx({ modalType: MODAL_INVEST });
   };
@@ -155,13 +161,28 @@ export const FundRow: FC<Props> = (props) => {
     openModalFx({ modalType: MODAL_WITHDRAW });
   };
 
+  const tokens = useMemo(() => {
+    const { assets, fundState } = fund.account.data;
+
+    const assetWights = fundState?.assetWeights;
+
+    if (!assetWights) {
+      return [];
+    }
+
+    return assetWights.map((weight, index) => ({
+      mintAddress: assets[index].mint,
+      weight: weight / 10,
+    }));
+  }, [fund]);
+
   return (
     <Wrapper onClick={handleOpenInvestModalClick}>
       <TopWrapper>
         <Column className={classNames({ name: true })}>
           <Avatar />
           <InfoWrapper>
-            <FundName>Alameda Bull DFS (ABDFS)</FundName>
+            <FundName>Alameda Bull DTF (AB)</FundName>
             <FundDate>Inception date: Feb 26, 2021</FundDate>
           </InfoWrapper>
         </Column>
@@ -192,42 +213,23 @@ export const FundRow: FC<Props> = (props) => {
       </TopWrapper>
       <BottomWrapper>
         <TokenSharesRow>
-          <TokenShare>
-            <Avatar size={18} />
-            <TokenName>
-              FTT <TokenShareValue>33.11%</TokenShareValue>
-            </TokenName>
-          </TokenShare>
-          <TokenShare>
-            <Avatar size={18} />
-            <TokenName>
-              FTT <TokenShareValue>33.11%</TokenShareValue>
-            </TokenName>
-          </TokenShare>
-          <TokenShare>
-            <Avatar size={18} />
-            <TokenName>
-              FTT <TokenShareValue>33.11%</TokenShareValue>
-            </TokenName>
-          </TokenShare>
-          <TokenShare>
-            <Avatar size={18} />
-            <TokenName>
-              FTT <TokenShareValue>33.11%</TokenShareValue>
-            </TokenName>
-          </TokenShare>
-          <TokenShare>
-            <Avatar size={18} />
-            <TokenName>
-              FTT <TokenShareValue>33.11%</TokenShareValue>
-            </TokenName>
-          </TokenShare>
-          <TokenShare>
-            <Avatar size={18} />
-            <TokenName>
-              FTT <TokenShareValue>33.11%</TokenShareValue>
-            </TokenName>
-          </TokenShare>
+          {tokens.map((tokenWeight) => {
+            const tokenMeta = TOKENS.devnet.find(
+              (token) =>
+                token.mintAddress === tokenWeight.mintAddress.toBase58(),
+            );
+
+            return (
+              <TokenShare key={tokenWeight.mintAddress.toBase58()}>
+                <Avatar size={18} src={tokenMeta?.icon} />
+                <TokenName>
+                  {tokenMeta?.tokenName ||
+                    shortAddress(tokenWeight.mintAddress.toBase58())}{' '}
+                  <TokenShareValue>{tokenWeight.weight}%</TokenShareValue>
+                </TokenName>
+              </TokenShare>
+            );
+          })}
         </TokenSharesRow>
       </BottomWrapper>
     </Wrapper>

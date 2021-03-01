@@ -29,11 +29,11 @@ export const globals = css`
       font-feature-settings: 'kern';
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
+
+      background: #fbfbfd;
     }
 
     #root {
-      background: #fbfbfd;
-
       padding-bottom: 50px;
     }
 

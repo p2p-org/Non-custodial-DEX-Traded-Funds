@@ -1,9 +1,11 @@
 /* eslint-disable  react-hooks/rules-of-hooks */
+
 const {
   useBabelRc,
   override,
   addWebpackModuleRule,
   addWebpackPlugin,
+  removeModuleScopePlugin,
 } = require('customize-cra');
 
 const SpritePlugin = require('svg-sprite-loader/plugin');
@@ -11,6 +13,7 @@ const SpritePlugin = require('svg-sprite-loader/plugin');
 module.exports = override(
   useBabelRc(),
   addWebpackPlugin(new SpritePlugin()),
+  removeModuleScopePlugin(),
   addWebpackModuleRule(
     {
       test: /\.tsx?$/,

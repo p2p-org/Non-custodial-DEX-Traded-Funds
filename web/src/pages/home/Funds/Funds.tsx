@@ -2,9 +2,11 @@ import React, { FC, HTMLAttributes } from 'react';
 
 import { styled } from '@linaria/react';
 import classNames from 'classnames';
+import { useGate, useStore } from 'effector-react';
 import { FundRow } from './FundRow';
 import { Column } from './common/Column';
 import { Selector } from './Selector';
+import { $funds, FundsGate } from './model';
 
 const Wrapper = styled.div``;
 
@@ -57,6 +59,10 @@ export const Funds: FC<Props & HTMLAttributes<HTMLDivElement>> = ({
   style,
   className,
 }) => {
+  useGate(FundsGate);
+
+  const funds = useStore($funds);
+
   return (
     <Wrapper style={style} className={className}>
       <Title>DTFs</Title>
@@ -80,12 +86,9 @@ export const Funds: FC<Props & HTMLAttributes<HTMLDivElement>> = ({
         </Column>
       </ColumnsHeader>
       <FundList>
-        <FundRow />
-        <FundRow />
-        <FundRow />
-        <FundRow />
-        <FundRow />
-        <FundRow />
+        {funds.map((fund) => (
+          <FundRow key={fund.pubkey.toBase58()} fund={fund} />
+        ))}
       </FundList>
     </Wrapper>
   );
