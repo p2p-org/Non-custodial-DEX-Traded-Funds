@@ -174,6 +174,7 @@ export const schema = new Map<Function, any>([
       kind: 'struct',
       fields: [
         ['paused', 'u8'],
+        ['slippageDivider', 'u64'],
         ['assetWeights', ['u32']],
         ['basicAsset', AssetInfo],
       ],
