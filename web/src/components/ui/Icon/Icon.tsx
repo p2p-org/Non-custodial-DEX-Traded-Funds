@@ -3,7 +3,7 @@ import React from 'react';
 import isPropValid from '@emotion/is-prop-valid';
 import { CSSProperties } from '@linaria/core';
 
-import { SvgIconType } from 'types/custon';
+import { SvgIconType } from 'types/custom';
 import arrowTriangle from './assets/arrow-triangle-icon.svg';
 import checkmark from './assets/checkmark-icon.svg';
 
