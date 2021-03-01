@@ -34,7 +34,7 @@ export const TOKENS = {
     {
       tokenSymbol: 'FTT',
       mintAddress: 'DLMTFLwUMocgy63KEMb59VBHYPvjWv399N5HFgrXsgnv',
-      tokenName: 'Wrapped FTT',
+      tokenName: 'FTT',
       icon:
         'https://raw.githubusercontent.com/trustwallet/assets/f3ffd0b9ae2165336279ce2f8db1981a55ce30f8/blockchains/ethereum/assets/0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9/logo.png',
     },
@@ -42,6 +42,7 @@ export const TOKENS = {
       tokenSymbol: 'REN',
       mintAddress: '4McZwrFKMo9QhXNQFKuwxhG3aHik6xhsFZBhHVaCW9CJ',
       tokenName: 'REN',
+      icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/2539.png',
     },
     {
       tokenSymbol: 'SRM',
@@ -54,7 +55,7 @@ export const TOKENS = {
     {
       tokenSymbol: 'SUSHI',
       mintAddress: '6Cyp4H66L5JE2DnEgpYRBS27sY7rYSLPz6b31q1coUYJ',
-      tokenName: 'Wrapped SUSHI',
+      tokenName: 'SUSHI',
       icon:
         'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B3595068778DD592e39A122f4f5a5cF09C90fE2/logo.png',
     },
@@ -62,6 +63,7 @@ export const TOKENS = {
       tokenSymbol: 'RAY',
       mintAddress: '757dVSETUqFjmDQPAkCyiZzumjtShHTb7B8PpFFFUSib',
       tokenName: 'RAY',
+      icon: 'https://s2.coinmarketcap.com/static/img/coins/64x64/8526.png',
     },
     {
       tokenSymbol: 'FIDA',

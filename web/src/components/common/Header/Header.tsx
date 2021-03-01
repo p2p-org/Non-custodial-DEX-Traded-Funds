@@ -67,14 +67,14 @@ export const Header: FC<Props> = () => {
     <Wrapper>
       <Container>
         <Left>
-          <LogoLink to="/">.andromeda</LogoLink>
+          <LogoLink to="/">DTF</LogoLink>
           <ByA href="https://p2p.org" target="_blank" rel="noopener noreferrer">
             —{'     '}by p2p.org
           </ByA>
         </Left>
 
         <Right>
-          <NavMenu />
+          {/*<NavMenu />*/}
           {!connected ? (
             <Button primary onClick={connectClicked}>
               Connect wallet
