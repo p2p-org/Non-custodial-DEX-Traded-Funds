@@ -247,7 +247,7 @@ impl Fund {
                 let swap_pool_token_mints = next_account_infos(accounts_iter, assets_count)?;
                 let swap_fees = next_account_infos(accounts_iter, assets_count)?;
 
-                // Check
+                // Check the accounts
                 check_account_address(vault_signer, &pool_state.vault_signer, stringify!(vault_signer))?;
                 check_token_account(
                     basic_asset_vault,
@@ -280,7 +280,7 @@ impl Fund {
                     Some(&pool_state.vault_signer),
                 )?;
 
-                // Calc current amounts in the basic asset
+                // Calc the current amounts in the basic asset
                 let basic_asset_vault_token_account = TokenAccount::unpack(&basic_asset_vault.try_borrow_data()?)?;
                 let swap_basic_asset_token_account = TokenAccount::unpack(&swap_basic_asset.try_borrow_data()?)?;
                 let mut current_asset_amounts = Vec::with_capacity(pool_vaults.len());
@@ -295,20 +295,19 @@ impl Fund {
 
                     total_amount += amount;
                     let amount = u64::try_from(amount).map_err(|err| {
-                        msg!("Amount overflow: {}", err);
+                        msg!("Amount overflowed: {}", err);
                         FundError::OperationOverflow
                     })?;
                     current_asset_amounts.push(amount);
                     asset_vault_token_accounts.push(vault_token_account);
                 }
 
-                // Calc needed amounts in the basic asset
+                // Calc the needed amounts in the basic asset
                 let total_weight = fund_state
                     .asset_weights
                     .iter()
                     .fold(0_u128, |sum, weight| sum + *weight as u128);
                 let mut to_buy = Vec::new();
-                let slippage_divider = 100; // todo: move to state
 
                 for (i, &amount) in current_asset_amounts.iter().enumerate() {
                     let need_amount = u64::try_from(fund_state.asset_weights[i] as u128 * total_amount / total_weight)
@@ -317,17 +316,18 @@ impl Fund {
                             FundError::OperationOverflow
                         })?;
 
-                    if need_amount < amount - amount / slippage_divider {
-                        // Sell
-                        let diff_amount = amount - need_amount;
+                    if need_amount < amount - amount / fund_state.slippage_divider {
+                        msg!("To sell asset {}", i);
+
+                        let amount_delta = amount - need_amount;
                         let amount_in = u64::try_from(
-                            diff_amount as u128 * asset_vault_token_accounts[i].amount as u128 / amount as u128,
+                            amount_delta as u128 * asset_vault_token_accounts[i].amount as u128 / amount as u128,
                         )
                         .map_err(|err| {
-                            msg!("Amount in overflow: {}", err);
+                            msg!("Sell amount_in overflowed: {}", err);
                             FundError::OperationOverflow
                         })?;
-                        let minimum_amount_out = diff_amount - diff_amount / slippage_divider;
+                        let minimum_amount_out = amount_delta - amount_delta / fund_state.slippage_divider;
 
                         let swap_instruction = spl_token_swap::instruction::swap(
                             &spl_token_swap::id(),
@@ -374,12 +374,69 @@ impl Fund {
                             msg!("Invoke swap error for token {}: {}", i, err);
                             err
                         })?;
-                    } else if need_amount > amount + amount / slippage_divider {
-                        to_buy.push((i, need_amount - amount));
+                    } else if need_amount > amount + amount / fund_state.slippage_divider {
+                        to_buy.push((i, amount, need_amount));
                     }
                 }
 
-                // Buy
+                for (i, amount, need_amount) in to_buy {
+                    msg!("To buy asset {}", i);
+
+                    let amount_delta = need_amount - amount;
+                    let asset_amount_delta = u64::try_from(
+                        amount_delta as u128 * asset_vault_token_accounts[i].amount as u128 / amount as u128,
+                    )
+                    .map_err(|err| {
+                        msg!("Buy amount_in overflowed: {}", err);
+                        FundError::OperationOverflow
+                    })?;
+
+                    let swap_instruction = spl_token_swap::instruction::swap(
+                        &spl_token_swap::id(),
+                        &spl_token::id(),
+                        token_swaps[i].key,
+                        swap_authorities[i].key,
+                        &pool_state.vault_signer,
+                        basic_asset_vault.key,
+                        swap_basic_asset.key,
+                        swap_assets[i].key,
+                        pool_vaults[i].key,
+                        swap_pool_token_mints[i].key,
+                        swap_fees[i].key,
+                        None,
+                        spl_token_swap::instruction::Swap {
+                            amount_in: amount_delta,
+                            minimum_amount_out: asset_amount_delta - asset_amount_delta / fund_state.slippage_divider,
+                        },
+                    )
+                    .map_err(|err| {
+                        msg!("Create swap instruction error for token {}: {}", i, err);
+                        err
+                    })?;
+
+                    let account_infos = vec![
+                        token_swaps[i].clone(),
+                        swap_authorities[i].clone(),
+                        vault_signer.clone(),
+                        basic_asset_vault.clone(),
+                        swap_basic_asset.clone(),
+                        swap_assets[i].clone(),
+                        pool_vaults[i].clone(),
+                        swap_pool_token_mints[i].clone(),
+                        swap_fees[i].clone(),
+                        spl_token_program.clone(),
+                    ];
+
+                    invoke_signed(
+                        &swap_instruction,
+                        &account_infos,
+                        &[&[pool_account.key.as_ref(), &[pool_state.vault_signer_nonce]]],
+                    )
+                    .map_err(|err| {
+                        msg!("Invoke swap error for token {}: {}", i, err);
+                        err
+                    })?;
+                }
             }
             FundInstructionInner::ApproveDelegate { amount } => {
                 let vault_account = next_account_info(accounts_iter)?;
