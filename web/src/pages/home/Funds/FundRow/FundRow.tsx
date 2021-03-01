@@ -3,6 +3,7 @@ import React, { FC, useMemo } from 'react';
 import { styled } from '@linaria/react';
 import classNames from 'classnames';
 import { PublicKeyAndAccount } from '@solana/web3.js';
+import { useStore } from 'effector-react';
 import { Button } from 'components/ui/Button';
 
 import { Avatar } from 'components/common/Avatar';
@@ -11,10 +12,13 @@ import {
   MODAL_INVEST,
   MODAL_WITHDRAW,
 } from 'components/common/ModalManager/constants';
-import { Column } from '../common/Column';
+import { shortAddress } from 'utils/common';
+import { TOKENS } from 'config/tokens';
+import { FUNDS } from 'config/funds';
 import { PoolState } from '../../../../../../js/lib/fund';
-import { shortAddress } from '../../../../utils/common';
-import { TOKENS } from '../../../../config';
+import { Column } from '../common/Column';
+import { $ratesMap } from '../../../../models/rates';
+import { PoolStatePopulated } from '../../../../models/connection/types';
 
 const TopWrapper = styled.div`
   display: flex;
@@ -145,10 +149,87 @@ const TokenShareValue = styled.div`
 `;
 
 interface Props {
-  fund: PublicKeyAndAccount<PoolState>;
+  fund: PublicKeyAndAccount<PoolStatePopulated>;
 }
 
 export const FundRow: FC<Props> = ({ fund }) => {
+  const ratesMap = useStore($ratesMap);
+
+  const fundMarketCap = useMemo(
+    () =>
+      fund.account.data.assets.reduce((marketCap, asset) => {
+        if (!asset.vaultPopulated) {
+          console.error(
+            'vaultPopulated for marketCap calculation did not found:',
+            asset.mint.toBase58(),
+          );
+          return marketCap;
+        }
+
+        const tokenMeta = TOKENS.devnet.find(
+          (token) => token.mintAddress === asset.mint.toBase58(),
+        );
+        if (!tokenMeta) {
+          console.error(
+            'tokenMeta for marketCap calculation did not found:',
+            asset.mint.toBase58(),
+          );
+          return marketCap;
+        }
+
+        const rate = ratesMap[tokenMeta.tokenSymbol];
+
+        if (!rate) {
+          console.error(
+            'rate for marketCap calculation did not found:',
+            tokenMeta.tokenSymbol,
+          );
+          return marketCap;
+        }
+
+        return marketCap + asset.vaultPopulated.tokenAmount.uiAmount * rate;
+      }, 0),
+    [fund, ratesMap],
+  );
+
+  const fundPrice = useMemo(() => {
+    if (!fund.account.data.poolTokenMintPopulated?.supply) {
+      console.error(
+        'supply for fundPrice calculation did not found:',
+        fund.account.data.poolTokenMint.toBase58(),
+      );
+      return 0;
+    }
+
+    // TODO: BN
+    return (
+      fundMarketCap / Number(fund.account.data.poolTokenMintPopulated.supply)
+    );
+  }, [fund, fundMarketCap]);
+
+  const fundMeta = useMemo(
+    () =>
+      FUNDS.devnet.find(
+        (fundItem) => fundItem.address === fund.pubkey.toBase58(),
+      ),
+    [fund],
+  );
+
+  const tokens = useMemo(() => {
+    const { assets, fundState } = fund.account.data;
+
+    const assetWeights = fundState?.assetWeights;
+
+    if (!assetWeights) {
+      return [];
+    }
+
+    return assetWeights.map((weight, index) => ({
+      mintAddress: assets[index].mint,
+      weight: weight / 10,
+    }));
+  }, [fund]);
+
   const handleOpenInvestModalClick = () => {
     openModalFx({ modalType: MODAL_INVEST });
   };
@@ -161,36 +242,33 @@ export const FundRow: FC<Props> = ({ fund }) => {
     openModalFx({ modalType: MODAL_WITHDRAW });
   };
 
-  const tokens = useMemo(() => {
-    const { assets, fundState } = fund.account.data;
-
-    const assetWights = fundState?.assetWeights;
-
-    if (!assetWights) {
-      return [];
-    }
-
-    return assetWights.map((weight, index) => ({
-      mintAddress: assets[index].mint,
-      weight: weight / 10,
-    }));
-  }, [fund]);
-
   return (
     <Wrapper onClick={handleOpenInvestModalClick}>
       <TopWrapper>
         <Column className={classNames({ name: true })}>
-          <Avatar />
+          <Avatar src={fundMeta?.icon} />
           <InfoWrapper>
-            <FundName>Alameda Bull DTF (AB)</FundName>
+            <FundName>{fundMeta?.fundName}</FundName>
             <FundDate>Inception date: Feb 26, 2021</FundDate>
           </InfoWrapper>
         </Column>
-        <ColumnValue className={classNames({ marketCap: true })}>
-          $12,000,000.21
+        <ColumnValue
+          title={String(fundMarketCap || '')}
+          className={classNames({ marketCap: true })}
+        >
+          {new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+          }).format(fundMarketCap)}
         </ColumnValue>
-        <ColumnValue className={classNames({ price: true })}>
-          $124.91
+        <ColumnValue
+          title={String(fundPrice || '')}
+          className={classNames({ price: true })}
+        >
+          {new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+          }).format(fundPrice)}
         </ColumnValue>
         <ColumnValue className={classNames({ since: true, profit: true })}>
           + 420.01%

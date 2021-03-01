@@ -11,7 +11,6 @@ const Wrapper = styled.div<{
   width: ${(props) => props.size || '32'}px;
   height: ${(props) => props.size || '32'}px;
 
-  background-color: #f6f6f8;
   background-image: ${(props) => (props.src ? `url("${props.src}")` : 'none')};
   background-size: ${(props) => props.size || '32'}px;
   background-repeat: no-repeat;
@@ -19,6 +18,7 @@ const Wrapper = styled.div<{
   border-radius: 50%;
 
   &:not([src]) {
+    background-color: #f6f6f8;
     background-image: url('${avatarImg}');
     background-size: 17px 15px;
   }
