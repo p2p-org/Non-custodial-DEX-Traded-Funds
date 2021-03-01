@@ -44,7 +44,7 @@ pub enum FundInstructionInner {
     /// - `[]` Pool vault account for each of the pool assets
     Unpause,
 
-    /// Rebalances the fund basket.
+    /// Rebalances the fund assets.
     ///
     /// Accounts:
     ///
@@ -53,13 +53,12 @@ pub enum FundInstructionInner {
     /// - `[writable]` Pool vault account for each of the N pool assets
     /// - `[]` Pool vault authority
     /// - `[writable]` Fund vault account of basic asset
-    /// - `[]` Token-swap
-    /// - `[]` Swap authority
-    /// - `[writable]` Swap accounts for each of the N pool assets
+    /// - `[]` Token-swap account for each of the N pool assets
+    /// - `[]` Swap authority for each of the N pool assets
+    /// - `[writable]` Swap asset account for each of the N pool assets
     /// - `[writable]` Swap basic asset account
-    /// - `[writable]` Swap pool token mint, to generate trading fees
-    /// - `[writable]` Swap fee account, to receive trading fees
-    /// - `[optional, writable]` Swap host fee account to receive additional trading fees
+    /// - `[writable]` Swap pool token mint, to generate trading fees for each of the N pool assets
+    /// - `[writable]` Swap fee account, to receive trading fees for each of the N pool assets
     Rebalance,
 
     /// Approves an account to spend tokens on behalf of the pool.

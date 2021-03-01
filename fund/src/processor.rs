@@ -90,6 +90,7 @@ impl Pool for Fund {
 
         state.write_fund_state(&FundState {
             paused: false,
+            slippage_divider: fund_data.slippage_divider,
             asset_weights: fund_data.asset_weights,
             basic_asset,
         })?;
@@ -234,35 +235,43 @@ impl Fund {
                     return Err(ProgramError::InvalidArgument);
                 }
 
-                let pool_vaults = next_account_infos(accounts_iter, pool_state.assets.len())?;
+                let assets_count = pool_state.assets.len();
+                let pool_vaults = next_account_infos(accounts_iter, assets_count)?;
                 let vault_signer = next_account_info(accounts_iter)?;
                 let basic_asset_vault = next_account_info(accounts_iter)?;
                 let spl_token_program = next_account_info(accounts_iter)?;
-                let token_swap = next_account_info(accounts_iter)?;
-                let swap_authority = next_account_info(accounts_iter)?;
-                let swap_assets = next_account_infos(accounts_iter, pool_state.assets.len())?;
+                let token_swaps = next_account_infos(accounts_iter, assets_count)?;
+                let swap_authorities = next_account_infos(accounts_iter, assets_count)?;
+                let swap_assets = next_account_infos(accounts_iter, assets_count)?;
                 let swap_basic_asset = next_account_info(accounts_iter)?;
-                let swap_pool_token_mint = next_account_info(accounts_iter)?;
-                let swap_fee = next_account_info(accounts_iter)?;
-                let swap_host_fee = next_account_info(accounts_iter).ok();
+                let swap_pool_token_mints = next_account_infos(accounts_iter, assets_count)?;
+                let swap_fees = next_account_infos(accounts_iter, assets_count)?;
 
                 // Check
                 check_account_address(vault_signer, &pool_state.vault_signer, stringify!(vault_signer))?;
-                if token_swap.owner != &spl_token_swap::id() {
-                    msg!("Account not owned by spl-token-swap program");
-                    return Err(ProgramError::InvalidAccountData);
-                }
                 check_token_account(
                     basic_asset_vault,
                     &fund_state.basic_asset.mint,
                     Some(&pool_state.vault_signer),
                 )?;
                 check_account_address(vault_signer, &pool_state.vault_signer, stringify!(vault_signer))?;
-                for ((asset, vault), swap_asset) in
-                    pool_state.assets.iter().zip(pool_vaults.iter()).zip(swap_assets.iter())
-                {
-                    check_account_address(vault, &asset.vault_address, stringify!(vault))?;
-                    check_token_account(vault, &asset.mint, Some(&pool_state.vault_signer))?;
+                if spl_token_program.key != &spl_token::ID {
+                    msg!("Incorrect spl-token program ID");
+                    return Err(ProgramError::InvalidArgument);
+                }
+                for i in 0..assets_count {
+                    let asset = &pool_state.assets[i];
+                    let asset_vault = &pool_vaults[i];
+                    let token_swap = &token_swaps[i];
+                    let swap_asset = &swap_assets[i];
+
+                    msg!("Check accounts for asset number {}", i);
+                    check_account_address(asset_vault, &asset.vault_address, stringify!(asset_vault))?;
+                    check_token_account(asset_vault, &asset.mint, Some(&pool_state.vault_signer))?;
+                    if token_swap.owner != &spl_token_swap::id() {
+                        msg!("Token-swap account {} not owned by spl-token-swap program", i);
+                        return Err(ProgramError::InvalidAccountData);
+                    }
                     check_token_account(swap_asset, &asset.mint, Some(&pool_state.vault_signer))?;
                 }
                 check_token_account(
@@ -270,10 +279,6 @@ impl Fund {
                     &fund_state.basic_asset.mint,
                     Some(&pool_state.vault_signer),
                 )?;
-                if spl_token_program.key != &spl_token::ID {
-                    msg!("Incorrect spl-token program ID");
-                    return Err(ProgramError::InvalidArgument);
-                }
 
                 // Calc current amounts in the basic asset
                 let basic_asset_vault_token_account = TokenAccount::unpack(&basic_asset_vault.try_borrow_data()?)?;
@@ -327,16 +332,16 @@ impl Fund {
                         let swap_instruction = spl_token_swap::instruction::swap(
                             &spl_token_swap::id(),
                             &spl_token::id(),
-                            token_swap.key,
-                            swap_authority.key,
+                            token_swaps[i].key,
+                            swap_authorities[i].key,
                             &pool_state.vault_signer,
                             pool_vaults[i].key,
                             swap_assets[i].key,
                             swap_basic_asset.key,
                             basic_asset_vault.key,
-                            swap_pool_token_mint.key,
-                            swap_fee.key,
-                            swap_host_fee.map(|info| info.key),
+                            swap_pool_token_mints[i].key,
+                            swap_fees[i].key,
+                            None,
                             spl_token_swap::instruction::Swap {
                                 amount_in,
                                 minimum_amount_out,
@@ -347,21 +352,18 @@ impl Fund {
                             err
                         })?;
 
-                        let mut account_infos = vec![
-                            token_swap.clone(),
-                            swap_authority.clone(),
+                        let account_infos = vec![
+                            token_swaps[i].clone(),
+                            swap_authorities[i].clone(),
                             vault_signer.clone(),
                             pool_vaults[i].clone(),
                             swap_assets[i].clone(),
                             swap_basic_asset.clone(),
                             basic_asset_vault.clone(),
-                            swap_pool_token_mint.clone(),
-                            swap_fee.clone(),
+                            swap_pool_token_mints[i].clone(),
+                            swap_fees[i].clone(),
                             spl_token_program.clone(),
                         ];
-                        if let Some(swap_host_fee) = swap_host_fee.cloned() {
-                            account_infos.push(swap_host_fee);
-                        }
 
                         invoke_signed(
                             &swap_instruction,
