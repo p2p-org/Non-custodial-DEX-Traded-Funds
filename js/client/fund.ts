@@ -79,6 +79,11 @@ export class PoolState extends Assignable {
   fundState?: FundState;
 }
 
+class ExecutePoolAction extends PoolRequestInner {
+  index: number;
+  amount: BN;
+}
+
 export const schema = new Map<Function, any>([
   [
     PoolRequest,
@@ -181,6 +186,16 @@ export const schema = new Map<Function, any>([
       ],
     },
   ],
+  [
+    ExecutePoolAction,
+    {
+      kind: 'struct',
+      fields: [
+        ['index', 'u8'],
+        ['amount', 'u64'],
+      ],
+    },
+  ],
 ]);
 
 export class Fund {
@@ -193,7 +208,7 @@ export class Fund {
     });
   }
 
-  static createInitSwapInstruction(
+  static createInitializeInstruction(
     fundProgramId: PublicKey,
     fundAccount: PublicKey,
     fundTokenMint: PublicKey,
@@ -247,6 +262,59 @@ export class Fund {
       tag: PoolRequestTag,
       index: 0,
       inner: initializePoolRequest,
+    });
+
+    const serializedData = borsh.serialize(schema, poolRequest);
+
+    return new TransactionInstruction({
+      keys,
+      programId: fundProgramId,
+      data: Buffer.from(
+        serializedData.buffer,
+        serializedData.byteOffset,
+        serializedData.byteLength,
+      ),
+    });
+  }
+
+  static createExecuteInstruction(
+    fundProgramId: PublicKey,
+    fundAccount: PublicKey,
+    fundTokenMint: PublicKey,
+    fundVaultAccounts: PublicKey[],
+    fundVaultAuthority: PublicKey,
+    userPoolTokenAccount: PublicKey,
+    userAssetsAccounts: PublicKey[],
+    authorityUserAccounts: PublicKey,
+    lqdFeeAccount: PublicKey,
+    initializerFeeAccount: PublicKey,
+    refferFeeVault: PublicKey,
+    tokenProgramId: PublicKey,
+    amount: BN,
+  ): TransactionInstruction {
+    const keys = [
+      { pubkey: fundAccount, isSigner: false, isWritable: true },
+      { pubkey: fundTokenMint, isSigner: false, isWritable: true },
+      ...fundVaultAccounts.map((acc) => ({ pubkey: acc, isSigner: false, isWritable: true })),
+      { pubkey: fundVaultAuthority, isSigner: false, isWritable: false },
+      { pubkey: userPoolTokenAccount, isSigner: false, isWritable: true },
+      ...userAssetsAccounts.map((acc) => ({ pubkey: acc, isSigner: false, isWritable: true })),
+      { pubkey: authorityUserAccounts, isSigner: true, isWritable: false },
+      { pubkey: lqdFeeAccount, isSigner: false, isWritable: true },
+      { pubkey: initializerFeeAccount, isSigner: false, isWritable: true },
+      { pubkey: refferFeeVault, isSigner: false, isWritable: true },
+      { pubkey: tokenProgramId, isSigner: false, isWritable: false },
+    ];
+
+    const executePoolAction = new ExecutePoolAction({
+      index: 0,
+      amount,
+    });
+
+    const poolRequest = new PoolRequest({
+      tag: PoolRequestTag,
+      index: 2,
+      inner: executePoolAction,
     });
 
     const serializedData = borsh.serialize(schema, poolRequest);

@@ -1,4 +1,7 @@
-use solana_sdk::signature::{Keypair, Signer};
+use solana_sdk::{
+    pubkey::Pubkey,
+    signature::{Keypair, Signer},
+};
 
 pub trait Print {
     fn print_in_place(self, msg: impl AsRef<str>) -> Self
@@ -20,5 +23,11 @@ impl Print for Keypair {
             self.pubkey(),
             self.to_base58_string()
         );
+    }
+}
+
+impl Print for Pubkey {
+    fn print(&self, msg: impl AsRef<str>) {
+        println!("{}: {}", msg.as_ref(), self);
     }
 }
