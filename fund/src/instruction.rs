@@ -73,25 +73,6 @@ pub enum FundInstructionInner {
     /// - `[]` spl-token program ID
     ApproveDelegate { amount: u64 },
 
-    /// Adds a new asset to the pool.
-    ///
-    /// Accounts:
-    ///
-    /// - `[writable]` Pool account
-    /// - `[signer]` Admin account
-    /// - `[]` Pool vault account for the new asset
-    AddAsset,
-
-    /// Removes an asset from the pool. The pool must not currently own any
-    /// tokens of the asset to be removed.
-    ///
-    /// Accounts:
-    ///
-    /// - `[writable]` Pool account
-    /// - `[signer]` Admin account
-    /// - `[]` Pool vault account to remove
-    RemoveAsset,
-
     /// Modifies the fee rate for the pool.
     ///
     /// Accounts:

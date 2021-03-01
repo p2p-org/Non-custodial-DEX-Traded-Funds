@@ -483,48 +483,6 @@ impl Fund {
                     &[&[pool_account.key.as_ref(), &[pool_state.vault_signer_nonce]]],
                 )?;
             }
-            FundInstructionInner::AddAsset => {
-                let vault_account = next_account_info(accounts_iter)?;
-
-                let parsed_vault_account = parse_token_account(vault_account)?;
-                if pool_state
-                    .assets
-                    .iter()
-                    .find(|asset| {
-                        asset.vault_address.as_ref() == vault_account.key
-                            || asset.mint.as_ref() == &parsed_vault_account.mint
-                    })
-                    .is_some()
-                {
-                    msg!("Asset already in fund");
-                    return Err(ProgramError::InvalidArgument);
-                }
-                if &parsed_vault_account.owner != pool_state.vault_signer.as_ref() {
-                    msg!("Token account not owned by fund");
-                    return Err(ProgramError::InvalidArgument);
-                }
-
-                pool_state.assets.push(AssetInfo {
-                    mint: parsed_vault_account.mint.into(),
-                    vault_address: vault_account.key.into(),
-                });
-            }
-            FundInstructionInner::RemoveAsset => {
-                let vault_account = next_account_info(accounts_iter)?;
-                let parsed_vault_account = parse_token_account(vault_account)?;
-                if parsed_vault_account.amount > 0 {
-                    msg!("Vault not empty");
-                    return Err(ProgramError::InvalidArgument);
-                }
-                let original_len = pool_state.assets.len();
-                pool_state
-                    .assets
-                    .retain(|asset| asset.vault_address.as_ref() != vault_account.key);
-                if pool_state.assets.len() == original_len {
-                    msg!("Asset not found");
-                    return Err(ProgramError::InvalidArgument);
-                }
-            }
             FundInstructionInner::UpdateFee { fee_rate } => {
                 pool_state.fee_rate = *fee_rate;
                 if pool_state.fee_rate < MIN_FEE_RATE {
