@@ -1,23 +1,33 @@
 {
   "files": {
-    "main.css": "/static/css/main.a57c2b2a.chunk.css",
-    "main.js": "/static/js/main.518f38db.chunk.js",
-    "main.js.map": "/static/js/main.518f38db.chunk.js.map",
-    "runtime-main.js": "/static/js/runtime-main.d10a1917.js",
-    "runtime-main.js.map": "/static/js/runtime-main.d10a1917.js.map",
-    "static/js/2.1c7106d3.chunk.js": "/static/js/2.1c7106d3.chunk.js",
-    "static/js/2.1c7106d3.chunk.js.map": "/static/js/2.1c7106d3.chunk.js.map",
-    "static/js/3.6b4c1ea6.chunk.js": "/static/js/3.6b4c1ea6.chunk.js",
-    "static/js/3.6b4c1ea6.chunk.js.map": "/static/js/3.6b4c1ea6.chunk.js.map",
-    "index.html": "/index.html",
-    "static/css/main.a57c2b2a.chunk.css.map": "/static/css/main.a57c2b2a.chunk.css.map",
-    "static/js/2.1c7106d3.chunk.js.LICENSE.txt": "/static/js/2.1c7106d3.chunk.js.LICENSE.txt",
-    "static/media/index.linaria.css": "/static/media/TTFirsNeue-ThinItalic.ffff0474.woff2"
+    "main.css": "/Non-custodial-DEX-Traded-Funds/static/css/main.7bc3fde4.chunk.css",
+    "main.js": "/Non-custodial-DEX-Traded-Funds/static/js/main.a1782b96.chunk.js",
+    "main.js.map": "/Non-custodial-DEX-Traded-Funds/static/js/main.a1782b96.chunk.js.map",
+    "runtime-main.js": "/Non-custodial-DEX-Traded-Funds/static/js/runtime-main.2b62ce81.js",
+    "runtime-main.js.map": "/Non-custodial-DEX-Traded-Funds/static/js/runtime-main.2b62ce81.js.map",
+    "static/js/2.79bf4131.chunk.js": "/Non-custodial-DEX-Traded-Funds/static/js/2.79bf4131.chunk.js",
+    "static/js/2.79bf4131.chunk.js.map": "/Non-custodial-DEX-Traded-Funds/static/js/2.79bf4131.chunk.js.map",
+    "static/css/3.cdb5fdf4.chunk.css": "/Non-custodial-DEX-Traded-Funds/static/css/3.cdb5fdf4.chunk.css",
+    "static/js/3.e85994cb.chunk.js": "/Non-custodial-DEX-Traded-Funds/static/js/3.e85994cb.chunk.js",
+    "static/js/3.e85994cb.chunk.js.map": "/Non-custodial-DEX-Traded-Funds/static/js/3.e85994cb.chunk.js.map",
+    "static/css/4.a1543b3b.chunk.css": "/Non-custodial-DEX-Traded-Funds/static/css/4.a1543b3b.chunk.css",
+    "static/js/4.6d7fc0d7.chunk.js": "/Non-custodial-DEX-Traded-Funds/static/js/4.6d7fc0d7.chunk.js",
+    "static/js/4.6d7fc0d7.chunk.js.map": "/Non-custodial-DEX-Traded-Funds/static/js/4.6d7fc0d7.chunk.js.map",
+    "static/js/5.73cbc601.chunk.js": "/Non-custodial-DEX-Traded-Funds/static/js/5.73cbc601.chunk.js",
+    "static/js/5.73cbc601.chunk.js.map": "/Non-custodial-DEX-Traded-Funds/static/js/5.73cbc601.chunk.js.map",
+    "index.html": "/Non-custodial-DEX-Traded-Funds/index.html",
+    "static/css/3.cdb5fdf4.chunk.css.map": "/Non-custodial-DEX-Traded-Funds/static/css/3.cdb5fdf4.chunk.css.map",
+    "static/css/4.a1543b3b.chunk.css.map": "/Non-custodial-DEX-Traded-Funds/static/css/4.a1543b3b.chunk.css.map",
+    "static/css/main.7bc3fde4.chunk.css.map": "/Non-custodial-DEX-Traded-Funds/static/css/main.7bc3fde4.chunk.css.map",
+    "static/js/2.79bf4131.chunk.js.LICENSE.txt": "/Non-custodial-DEX-Traded-Funds/static/js/2.79bf4131.chunk.js.LICENSE.txt",
+    "static/media/index.linaria.css": "/Non-custodial-DEX-Traded-Funds/static/media/TTFirsNeue-ThinItalic.ffff0474.woff2",
+    "static/media/arrow-triangle-icon.12c58ff8.svg": "/Non-custodial-DEX-Traded-Funds/static/media/arrow-triangle-icon.12c58ff8.svg",
+    "static/media/checkmark-icon.26a65993.svg": "/Non-custodial-DEX-Traded-Funds/static/media/checkmark-icon.26a65993.svg"
   },
   "entrypoints": [
-    "static/js/runtime-main.d10a1917.js",
-    "static/js/2.1c7106d3.chunk.js",
-    "static/css/main.a57c2b2a.chunk.css",
-    "static/js/main.518f38db.chunk.js"
+    "static/js/runtime-main.2b62ce81.js",
+    "static/js/2.79bf4131.chunk.js",
+    "static/css/main.7bc3fde4.chunk.css",
+    "static/js/main.a1782b96.chunk.js"
   ]
 }
