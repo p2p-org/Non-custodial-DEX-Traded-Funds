@@ -161,7 +161,7 @@ export const FundRow: FC<Props> = (props) => {
         <Column className={classNames({ name: true })}>
           <Avatar />
           <InfoWrapper>
-            <FundName>Alameda Bull DFS (ABDFS)</FundName>
+            <FundName>Alameda Bull DTF (ABDFS)</FundName>
             <FundDate>Inception date: Feb 26, 2021</FundDate>
           </InfoWrapper>
         </Column>

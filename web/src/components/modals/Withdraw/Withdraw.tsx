@@ -1,10 +1,11 @@
-import React, { FC } from 'react';
+import React, { FC, useState } from 'react';
 
 import { styled } from '@linaria/react';
 import { Modal } from 'components/common/Modal';
 import { Button } from 'components/ui/Button';
 import { Avatar } from 'components/common/Avatar';
 import { Input } from 'components/ui/Input';
+import { Slider } from 'components/ui/Slider';
 
 const WrapperModal = styled(Modal)`
   flex-basis: 512px;
@@ -39,36 +40,23 @@ const FundName = styled.div`
 `;
 
 const InputsWrapper = styled.div`
-  & > :not(:last-child) {
-    margin-bottom: 24px;
-  }
+  margin-bottom: 32px;
 `;
 
-const OptionsWrapper = styled.div`
+const AvailableBalanceWrapper = styled.div`
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
 
-  padding: 12px 0 38px;
-
-  & > :not(:last-child) {
-    margin-right: 10px;
-  }
+  margin: 16px 0 25px;
 `;
 
-const Option = styled.div`
-  display: flex;
-  align-items: center;
-  height: 34px;
-  padding: 0 15px;
-
-  color: #a3a5ba;
+const AvailableBalance = styled.div`
+  color: #5887ff;
   font-family: Titillium Web, sans-serif;
   font-weight: 600;
-  font-size: 14px;
-  line-height: 100%;
+  font-size: 16px;
+  line-height: 24px;
 
-  background: #fbfbfd;
-  border-radius: 12px;
   cursor: pointer;
 `;
 
@@ -115,6 +103,12 @@ interface Props {
 }
 
 export const Withdraw: FC<Props> = ({ close }) => {
+  const [percentage, setPercentage] = useState(0);
+
+  const handlePercentageChange = (nextValue: number) => {
+    setPercentage(nextValue);
+  };
+
   return (
     <WrapperModal title="Withdraw" close={close}>
       <Wrapper>
@@ -125,6 +119,17 @@ export const Withdraw: FC<Props> = ({ close }) => {
           </FundInfoWrapper>
           <InputsWrapper>
             <Input prefix="Amount" postfix="ABDFS" placeholder="0.0" />
+            <AvailableBalanceWrapper>
+              <AvailableBalance>
+                Available balance: 21.1507 ABDFS
+              </AvailableBalance>
+            </AvailableBalanceWrapper>
+            <Slider
+              value={percentage}
+              min={0}
+              max={100}
+              onChange={handlePercentageChange}
+            />
           </InputsWrapper>
         </InvestWrapper>
         <TransactionInfoWrapper>

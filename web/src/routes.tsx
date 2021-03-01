@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Redirect } from 'react-router-dom';
+import { Redirect } from 'react-router';
 import { renderRoutes, RouteConfig } from 'react-router-config';
 
 import { useStore } from 'effector-react';
