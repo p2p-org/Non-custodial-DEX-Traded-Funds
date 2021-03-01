@@ -20,7 +20,7 @@ use spl_token::state::Account as TokenAccount;
 
 use crate::{
     error::FundError,
-    instruction::{FundInstruction, FundInstructionInner, InitializeFundData},
+    instruction::{FundInstructionInner, FundRequest, InitializeFundData},
     state::{FundState, FundStateContainer},
 };
 
@@ -175,7 +175,7 @@ impl Pool for Fund {
             return Err(ProgramError::MissingRequiredSignature);
         }
 
-        let instruction: FundInstructionInner = FundInstruction::try_from_slice(instruction_data)
+        let instruction: FundInstructionInner = FundRequest::try_from_slice(instruction_data)
             .map_err(|_| {
                 msg!("Invalid instruction data");
                 ProgramError::InvalidInstructionData

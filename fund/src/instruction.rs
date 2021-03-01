@@ -1,7 +1,7 @@
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use serum_pool::schema::declare_tag;
 
-declare_tag!(FundInstructionTag, u64, 0x112ea41452f06767);
+declare_tag!(FundRequestTag, u64, 0x112ea41452f06767);
 
 /// Additional data for `PoolRequestInner::Initialize`.
 ///
@@ -19,8 +19,8 @@ pub struct InitializeFundData {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, BorshSerialize, BorshDeserialize)]
-pub struct FundInstruction {
-    pub tag: FundInstructionTag,
+pub struct FundRequest {
+    pub tag: FundRequestTag,
     pub inner: FundInstructionInner,
 }
 
