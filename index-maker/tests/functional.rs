@@ -47,6 +47,13 @@ async fn test_create_index() {
     let index_account_data_len = Index::calc_len(formula.len(), tokens.len(), description.len());
     let rent = banks_client.get_rent().await.unwrap();
     let index_account_rent = rent.minimum_balance(index_account_data_len);
+    let index_instruction_data = IndexInstruction::CreateIndex {
+        fee,
+        formula: formula.clone(),
+        tokens: tokens.clone(),
+        description: description.to_string(),
+    }
+    .pack();
 
     let mut transaction = Transaction::new_with_payer(
         &[
@@ -64,13 +71,7 @@ async fn test_create_index() {
                     AccountMeta::new(index_account.pubkey(), false),
                     AccountMeta::new_readonly(sysvar::rent::id(), false),
                 ],
-                data: IndexInstruction::CreateIndex {
-                    fee,
-                    formula: formula.clone(),
-                    tokens: tokens.clone(),
-                    description: description.to_string(),
-                }
-                .pack(),
+                data: index_instruction_data,
             },
         ],
         Some(&payer.pubkey()),
