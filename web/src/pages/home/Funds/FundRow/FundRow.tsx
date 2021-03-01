@@ -87,7 +87,7 @@ const Wrapper = styled.div`
   transition: box-shadow 100ms cubic-bezier(0.64, 0, 0.35, 1) 0s;
 
   &:hover {
-    box-shadow: 0 8px 24px #d1d1d1;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 
     ${ColumnButtons} {
       opacity: 1;

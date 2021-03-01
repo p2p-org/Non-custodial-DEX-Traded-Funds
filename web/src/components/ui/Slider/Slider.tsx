@@ -108,7 +108,9 @@ export class Slider extends PureComponent<Props> {
     max: 100,
   };
 
-  rootRef = createRef();
+  rootRef = createRef<HTMLDivElement>();
+
+  isListenerActive = false;
 
   componentWillUnmount() {
     this.removeListeners();
@@ -125,10 +127,20 @@ export class Slider extends PureComponent<Props> {
     }
   }
 
-  calculateValue(e) {
-    let { clientX } = e;
-    if (!clientX && e.changedTouches) {
-      clientX = e.changedTouches[0].clientX;
+  calculateValue(
+    e:
+      | React.MouseEvent<HTMLDivElement>
+      | React.TouchEvent<HTMLDivElement>
+      | MouseEvent
+      | TouchEvent,
+  ) {
+    if (!this.rootRef.current) {
+      return 0;
+    }
+
+    let { clientX } = e as React.MouseEvent<HTMLDivElement>;
+    if (!clientX && (e as TouchEvent).changedTouches) {
+      clientX = (e as TouchEvent).changedTouches[0].clientX;
     }
 
     const { min, max } = this.props;
@@ -144,7 +156,7 @@ export class Slider extends PureComponent<Props> {
     this.removeListeners();
   }
 
-  onClick = (e) => {
+  onClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
 
     this.setState({
@@ -152,7 +164,7 @@ export class Slider extends PureComponent<Props> {
     });
   };
 
-  onMouseDown = (e) => {
+  onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
 
     this.setState({
@@ -167,7 +179,7 @@ export class Slider extends PureComponent<Props> {
     }
   };
 
-  onTouchStart = (e) => {
+  onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     e.preventDefault();
 
     this.setState({
@@ -182,13 +194,13 @@ export class Slider extends PureComponent<Props> {
     }
   };
 
-  onMove = (e) => {
+  onMove = (e: MouseEvent | TouchEvent) => {
     e.preventDefault();
 
     this.props.onChange(this.calculateValue(e));
   };
 
-  onMovingEnd = (e) => {
+  onMovingEnd = (e: MouseEvent | TouchEvent) => {
     e.preventDefault();
 
     this.resetMoving();
