@@ -2,10 +2,12 @@
   "name": "solana-defi-hackathon",
   "version": "0.0.1",
   "private": true,
+  "homepage": "https://p2p-org.github.io/Non-custodial-DEX-Traded-Funds/",
   "scripts": {
+    "predeploy": "npm run build",
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",
-    "deploy": "yarn build && gh-pages -d build",
+    "deploy": "gh-pages -d build",
     "test": "react-app-rewired test --env=jsdom",
     "eject": "react-scripts eject",
     "lint": "eslint --fix ./src"
