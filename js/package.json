@@ -1,0 +1,16 @@
+{
+  "name": "@p2p/fund",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "p2p lab",
+  "license": "MIT",
+  "dependencies": {
+    "@solana/web3.js": "^0.93.0",
+    "bn.js": "^4.12.0",
+    "borsh": "^0.3.1"
+  }
+}

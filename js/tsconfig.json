@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es6",
+    "declaration": true,
+    "esModuleInterop": true,
+    "outDir": "./lib",
+    "baseUrl": "./client"
+  },
+  "include": ["client/**/*.ts"],
+  "exclude": ["node_modules"]
+}

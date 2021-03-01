@@ -1,17 +1,20 @@
 import React, { FC } from 'react';
 
 import { styled } from '@linaria/react';
-import { Link } from 'react-router-dom';
 import classNames from 'classnames';
 import { Button } from 'components/ui/Button';
 
 import { Avatar } from 'components/common/Avatar';
+import { openModalFx } from 'models/modals';
+import {
+  MODAL_INVEST,
+  MODAL_WITHDRAW,
+} from 'components/common/ModalManager/constants';
 import { Column } from '../common/Column';
-import { openModalFx } from '../../../../models/modals';
-import { MODAL_INVEST } from '../../../../components/common/ModalManager/constants';
 
 const TopWrapper = styled.div`
   display: flex;
+  flex-flow: nowrap;
 
   padding: 24px;
 `;
@@ -149,7 +152,7 @@ export const FundRow: FC<Props> = (props) => {
   ) => {
     e.stopPropagation();
 
-    // openModalFx({ modalType: MODAL_WITHDRAW });
+    openModalFx({ modalType: MODAL_WITHDRAW });
   };
 
   return (
@@ -177,7 +180,11 @@ export const FundRow: FC<Props> = (props) => {
         </ColumnValue>
 
         <ColumnButtons>
-          <ButtonStyled disabled={true} onClick={handleOpenWithdrawModalClick}>
+          <ButtonStyled
+            primary
+            disabled={false}
+            onClick={handleOpenWithdrawModalClick}
+          >
             Withdraw
           </ButtonStyled>
           <ButtonStyled primary>+ Invest</ButtonStyled>

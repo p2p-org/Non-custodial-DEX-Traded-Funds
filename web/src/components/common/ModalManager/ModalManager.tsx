@@ -14,7 +14,7 @@ import { last } from 'ramda';
 import { useStore } from 'effector-react';
 import { ModalComponentType, ModalState } from 'models/modals/types';
 import { $modals, closeModalFx } from 'models/modals';
-import { MODAL_INVEST } from './constants';
+import { MODAL_INVEST, MODAL_WITHDRAW } from './constants';
 
 const Wrapper = styled.div`
   position: fixed;
@@ -66,6 +66,7 @@ const ModalBackground = styled.div`
 
 const modalsMap = new Map<string, LazyExoticComponent<any>>([
   [MODAL_INVEST, lazy(() => import('components/modals/Invest'))],
+  [MODAL_WITHDRAW, lazy(() => import('components/modals/Withdraw'))],
 ]);
 
 export const ModalManager: FC = () => {
