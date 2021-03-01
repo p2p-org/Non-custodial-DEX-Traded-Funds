@@ -58,6 +58,7 @@ export class ParamDesc extends Assignable {
 
 export class FundState extends Assignable {
   paused: number;
+  slippageDivider: BN;
   assetWeights: number[];
   basicAsset: AssetInfo;
 }
