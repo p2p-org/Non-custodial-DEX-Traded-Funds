@@ -6,7 +6,7 @@ use solana_sdk::{
 use spl_token::state::{Account as TokenAccount, Mint};
 use spl_token_swap::curve::{base::SwapCurve, fees::Fees};
 
-use super::{client::Client, print::Print};
+use super::client::Client;
 
 pub fn create_token(client: &mut Client, owner: &Pubkey, decimals: u8) -> Keypair {
     let token_mint = Keypair::new();
@@ -97,19 +97,10 @@ pub fn transfer_to(
     client.process_transaction(&transaction);
 }
 
-pub struct SwapAccounts {
+pub struct CreateSwapResult {
     pub pool_token_mint: Keypair,
     pub fee: Keypair,
     pub pool_token_initial: Keypair,
-}
-
-impl Print for SwapAccounts {
-    fn print(&self, msg: impl AsRef<str>) {
-        self.pool_token_mint.print(&format!("{}.pool_token_mint", msg.as_ref()));
-        self.fee.print(&format!("{}.fee", msg.as_ref()));
-        self.pool_token_initial
-            .print(&format!("{}.pool_token_initial", msg.as_ref()));
-    }
 }
 
 pub fn create_swap(
@@ -122,7 +113,7 @@ pub fn create_swap(
     token_b: &Pubkey,
     owner: &Pubkey,
     fees: Fees,
-) -> SwapAccounts {
+) -> CreateSwapResult {
     let pool_token_mint = create_token(client, &swap_authority, 0);
     let fee = Keypair::new();
     let pool_token_initial = Keypair::new();
@@ -181,7 +172,7 @@ pub fn create_swap(
     );
     client.process_transaction(&transaction);
 
-    SwapAccounts {
+    CreateSwapResult {
         pool_token_mint,
         fee,
         pool_token_initial,

@@ -4,7 +4,7 @@ use anyhow::{anyhow, Result};
 use dotenv::dotenv;
 use fund_tests::{client::Client, print::Print, token};
 use solana_client::rpc_client::RpcClient;
-use solana_program::{program_pack::Pack, pubkey::Pubkey, system_program};
+use solana_program::{pubkey::Pubkey, system_program};
 use solana_sdk::{
     commitment_config::CommitmentConfig,
     signature::{read_keypair_file, Keypair, Signer},
@@ -157,41 +157,221 @@ fn main() -> Result<()> {
         spl_token_swap::id()
     };
 
-    let sol_usdc_swap = client.create_account(&swap_program_id, spl_token_swap::state::SwapV1::LEN);
-    let (sol_usdc_swap_authority, sol_usdc_swap_authority_nonce) = if let (Ok(authority), Ok(authority_nonce)) = (
-        env::var("sol_usdc_swap_authority"),
-        env::var("sol_usdc_swap_authority_nonce"),
-    ) {
-        (Pubkey::from_str(&authority)?, authority_nonce.parse()?)
-    } else {
-        Pubkey::find_program_address(&[sol_usdc_swap.pubkey().as_ref()], &swap_program_id)
-    };
-    let swap_token_sol = token::create_account(&mut client, &sol_usdc_swap_authority, &sol_token_mint.pubkey());
-    let swap_token_usdc = token::create_account(&mut client, &sol_usdc_swap_authority, &usdc_token_mint.pubkey());
-
-    let sol_usdc_swap = token::create_swap(
+    let sol_usdc_swap_data = create_swap(
         &mut client,
         &swap_program_id,
-        &sol_usdc_swap,
-        &sol_usdc_swap_authority,
-        sol_usdc_swap_authority_nonce,
+        &initializer_account,
+        "sol_usdc_swap",
+        "sol",
         &sol_token_mint.pubkey(),
+        1_000_000_000000,
+        "usdc",
         &usdc_token_mint.pubkey(),
-        &initializer_account.pubkey(),
+        15_250_000_000000,
         fees.clone(),
-    )
-    .print("sol_usdc_swap");
+    )?;
+
+    let ftt_usdc_swap_data = create_swap(
+        &mut client,
+        &swap_program_id,
+        &initializer_account,
+        "ftt_usdc_swap",
+        "ftt",
+        &ftt_token_mint.pubkey(),
+        1_000_000_000000,
+        "usdc",
+        &usdc_token_mint.pubkey(),
+        29_930_000_000000,
+        fees.clone(),
+    )?;
+
+    let ren_usdc_swap_data = create_swap(
+        &mut client,
+        &swap_program_id,
+        &initializer_account,
+        "ren_usdc_swap",
+        "ren",
+        &ren_token_mint.pubkey(),
+        1_000_000_000000,
+        "usdc",
+        &usdc_token_mint.pubkey(),
+        1_170_000_000000,
+        fees.clone(),
+    )?;
+
+    let srm_usdc_swap_data = create_swap(
+        &mut client,
+        &swap_program_id,
+        &initializer_account,
+        "srm_usdc_swap",
+        "srm",
+        &srm_token_mint.pubkey(),
+        1_000_000_000000,
+        "usdc",
+        &usdc_token_mint.pubkey(),
+        5_750_000_000000,
+        fees.clone(),
+    )?;
+
+    let sushi_usdc_swap_data = create_swap(
+        &mut client,
+        &swap_program_id,
+        &initializer_account,
+        "sushi_usdc_swap",
+        "sushi",
+        &sushi_token_mint.pubkey(),
+        1_000_000_000000,
+        "usdc",
+        &usdc_token_mint.pubkey(),
+        17_010_000_000000,
+        fees.clone(),
+    )?;
+
+    let ray_usdc_swap_data = create_swap(
+        &mut client,
+        &swap_program_id,
+        &initializer_account,
+        "ray_usdc_swap",
+        "ray",
+        &ray_token_mint.pubkey(),
+        1_000_000_000000,
+        "usdc",
+        &usdc_token_mint.pubkey(),
+        7_730_000_000000,
+        fees.clone(),
+    )?;
+
+    let fida_usdc_swap_data = create_swap(
+        &mut client,
+        &swap_program_id,
+        &initializer_account,
+        "fida_usdc_swap",
+        "fida",
+        &fida_token_mint.pubkey(),
+        1_000_000_000000,
+        "usdc",
+        &usdc_token_mint.pubkey(),
+        1_640_000_000000,
+        fees.clone(),
+    )?;
 
     Ok(())
 }
 
-fn mint_to(account: &Keypair, token_account_name: &str, token_mint: &Pubkey, client: &mut Client) -> Keypair {
+fn mint_to(owner: &Keypair, token_account_name: &str, token_mint: &Pubkey, client: &mut Client) -> Keypair {
     if let Ok(base58) = env::var(token_account_name) {
         Keypair::from_base58_string(&base58)
     } else {
         let token_account =
-            token::create_account(client, &account.pubkey(), token_mint).print_in_place(token_account_name);
-        token::mint_to(client, &account, token_mint, &token_account.pubkey(), 10_000_000000, 6);
+            token::create_account(client, &owner.pubkey(), token_mint).print_in_place(token_account_name);
+        token::mint_to(client, &owner, token_mint, &token_account.pubkey(), 10_000_000000, 6);
         token_account
     }
+}
+
+pub struct SwapData {
+    pub swap: Keypair,
+    pub authority: Pubkey,
+    pub authority_nonce: u8,
+    pub token_a: Keypair,
+    pub token_b: Keypair,
+    pub pool_token_mint: Keypair,
+    pub fee: Keypair,
+    pub pool_token_initial: Keypair,
+}
+
+fn create_swap(
+    client: &mut Client,
+    swap_program_id: &Pubkey,
+    owner: &Keypair,
+    swap_name: &str,
+    token_a_name: &str,
+    token_a_mint: &Pubkey,
+    token_a_amount: u64,
+    token_b_name: &str,
+    token_b_mint: &Pubkey,
+    token_b_amount: u64,
+    fees: Fees,
+) -> Result<SwapData> {
+    let swap = if let Ok(base58) = env::var(swap_name) {
+        Keypair::from_base58_string(&base58)
+    } else {
+        client
+            .create_account(swap_program_id, spl_token_swap::state::SwapVersion::LATEST_LEN)
+            .print_in_place(swap_name)
+    };
+
+    let authority_name = format!("{}_authority", swap_name);
+    let authority_nonce_name = format!("{}_authority_nonce", swap_name);
+    let (authority, authority_nonce) =
+        if let (Ok(authority), Ok(authority_nonce)) = (env::var(&authority_name), env::var(&authority_nonce_name)) {
+            (Pubkey::from_str(&authority)?, authority_nonce.parse()?)
+        } else {
+            let (authority, authority_nonce) = Pubkey::find_program_address(&[swap.pubkey().as_ref()], swap_program_id);
+            (authority.print_in_place(&authority_name), {
+                println!("{}: {}", authority_nonce_name, authority_nonce);
+                authority_nonce
+            })
+        };
+
+    let swap_token_a_name = format!("{}_token_{}", swap_name, token_a_name);
+    let token_a = if let Ok(base58) = env::var(&swap_token_a_name) {
+        Keypair::from_base58_string(&base58)
+    } else {
+        let token_a = token::create_account(client, &authority, token_a_mint);
+        token::mint_to(client, owner, token_a_mint, &token_a.pubkey(), token_a_amount, 6);
+        token_a.print_in_place(&swap_token_a_name)
+    };
+
+    let swap_token_b_name = format!("{}_token_{}", swap_name, token_b_name);
+    let token_b = if let Ok(base58) = env::var(&swap_token_b_name) {
+        Keypair::from_base58_string(&base58)
+    } else {
+        let token_b = token::create_account(client, &authority, token_b_mint);
+        token::mint_to(client, owner, token_b_mint, &token_b.pubkey(), token_b_amount, 6);
+        token_b.print_in_place(&swap_token_b_name)
+    };
+
+    let pool_token_mint_name = format!("{}_pool_token_mint", swap_name);
+    let fee_name = format!("{}_fee", swap_name);
+    let pool_token_initial_name = format!("{}_pool_token_initial", swap_name);
+    let (pool_token_mint, fee, pool_token_initial) = if let Ok(base58) = env::var(&pool_token_mint_name) {
+        (
+            Keypair::from_base58_string(&base58),
+            Keypair::from_base58_string(&env::var(&fee_name)?),
+            Keypair::from_base58_string(&env::var(&pool_token_initial_name)?),
+        )
+    } else {
+        let token::CreateSwapResult {
+            pool_token_mint,
+            fee,
+            pool_token_initial,
+        } = token::create_swap(
+            client,
+            &swap_program_id,
+            &swap,
+            &authority,
+            authority_nonce,
+            &token_a.pubkey(),
+            &token_b.pubkey(),
+            &owner.pubkey(),
+            fees,
+        );
+        (
+            pool_token_mint.print_in_place(&pool_token_mint_name),
+            fee.print_in_place(&fee_name),
+            pool_token_initial.print_in_place(&pool_token_initial_name),
+        )
+    };
+
+    Ok(SwapData {
+        swap,
+        authority,
+        authority_nonce,
+        token_a,
+        token_b,
+        pool_token_mint,
+        fee,
+        pool_token_initial,
+    })
 }
