@@ -1,3 +1,5 @@
+use std::{env, str::FromStr};
+
 use solana_program::{program_pack::Pack, pubkey::Pubkey, system_instruction};
 use solana_sdk::{
     signature::{Keypair, Signer},
@@ -97,25 +99,20 @@ pub fn transfer_to(
     client.process_transaction(&transaction);
 }
 
-pub struct CreateSwapResult {
-    pub pool_token_mint: Keypair,
-    pub fee: Keypair,
-    pub pool_token_initial: Keypair,
-}
-
 pub fn create_swap(
     client: &mut Client,
     swap_program_id: &Pubkey,
     token_swap: &Keypair,
     swap_authority: &Pubkey,
     swap_authority_nonce: u8,
+    pool_token_mint: &Pubkey,
     token_a: &Pubkey,
     token_b: &Pubkey,
     owner: &Pubkey,
     fees: Fees,
-) -> CreateSwapResult {
-    let pool_token_mint = create_token(client, &swap_authority, 0);
+) -> (Keypair, Keypair) {
     let fee = Keypair::new();
+    let fee_owner = Pubkey::from_str(&env::var("SWAP_PROGRAM_OWNER_FEE_ADDRESS").unwrap()).unwrap();
     let pool_token_initial = Keypair::new();
 
     let mut transaction = Transaction::new_with_payer(
@@ -127,13 +124,8 @@ pub fn create_swap(
                 TokenAccount::LEN as u64,
                 &spl_token::id(),
             ),
-            spl_token::instruction::initialize_account(
-                &spl_token::id(),
-                &fee.pubkey(),
-                &pool_token_mint.pubkey(),
-                owner,
-            )
-            .unwrap(),
+            spl_token::instruction::initialize_account(&spl_token::id(), &fee.pubkey(), pool_token_mint, &fee_owner)
+                .unwrap(),
             system_instruction::create_account(
                 &client.payer_pubkey(),
                 &pool_token_initial.pubkey(),
@@ -144,7 +136,7 @@ pub fn create_swap(
             spl_token::instruction::initialize_account(
                 &spl_token::id(),
                 &pool_token_initial.pubkey(),
-                &pool_token_mint.pubkey(),
+                pool_token_mint,
                 owner,
             )
             .unwrap(),
@@ -155,7 +147,7 @@ pub fn create_swap(
                 swap_authority,
                 token_a,
                 token_b,
-                &pool_token_mint.pubkey(),
+                pool_token_mint,
                 &fee.pubkey(),
                 &pool_token_initial.pubkey(),
                 swap_authority_nonce,
@@ -172,9 +164,5 @@ pub fn create_swap(
     );
     client.process_transaction(&transaction);
 
-    CreateSwapResult {
-        pool_token_mint,
-        fee,
-        pool_token_initial,
-    }
+    (fee, pool_token_initial)
 }

@@ -141,14 +141,14 @@ fn main() -> Result<()> {
     );
 
     let fees = Fees {
-        trade_fee_numerator: 1,
-        trade_fee_denominator: 1000,
-        owner_trade_fee_numerator: 1,
-        owner_trade_fee_denominator: 1000,
-        owner_withdraw_fee_numerator: 1,
-        owner_withdraw_fee_denominator: 1000,
-        host_fee_numerator: 1,
-        host_fee_denominator: 1000,
+        trade_fee_numerator: 25,
+        trade_fee_denominator: 10000,
+        owner_trade_fee_numerator: 5,
+        owner_trade_fee_denominator: 10000,
+        owner_withdraw_fee_numerator: 0,
+        owner_withdraw_fee_denominator: 0,
+        host_fee_numerator: 20,
+        host_fee_denominator: 100,
     };
 
     let swap_program_id = if let Ok(key) = env::var("SWAP_PROGRAM_ID") {
@@ -333,32 +333,33 @@ fn create_swap(
     };
 
     let pool_token_mint_name = format!("{}_pool_token_mint", swap_name);
+    let pool_token_mint = if let Ok(base58) = env::var(&pool_token_mint_name) {
+        Keypair::from_base58_string(&base58)
+    } else {
+        token::create_token(client, &authority, 0).print_in_place(&pool_token_mint_name)
+    };
+
     let fee_name = format!("{}_fee", swap_name);
     let pool_token_initial_name = format!("{}_pool_token_initial", swap_name);
-    let (pool_token_mint, fee, pool_token_initial) = if let Ok(base58) = env::var(&pool_token_mint_name) {
+    let (fee, pool_token_initial) = if let Ok(base58) = env::var(&fee_name) {
         (
             Keypair::from_base58_string(&base58),
-            Keypair::from_base58_string(&env::var(&fee_name)?),
             Keypair::from_base58_string(&env::var(&pool_token_initial_name)?),
         )
     } else {
-        let token::CreateSwapResult {
-            pool_token_mint,
-            fee,
-            pool_token_initial,
-        } = token::create_swap(
+        let (fee, pool_token_initial) = token::create_swap(
             client,
             &swap_program_id,
             &swap,
             &authority,
             authority_nonce,
+            &pool_token_mint.pubkey(),
             &token_a.pubkey(),
             &token_b.pubkey(),
             &owner.pubkey(),
             fees,
         );
         (
-            pool_token_mint.print_in_place(&pool_token_mint_name),
             fee.print_in_place(&fee_name),
             pool_token_initial.print_in_place(&pool_token_initial_name),
         )
