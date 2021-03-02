@@ -1,13 +1,15 @@
 import { forward } from 'effector';
 import { createGate } from 'effector-react';
-import { PublicKeyAndAccount } from '@solana/web3.js';
+import { PublicKey, PublicKeyAndAccount } from '@solana/web3.js';
 import { app } from 'models/app';
 import { findFundFx } from 'models/connection';
-import { PoolState } from '../../../../../js/lib/fund';
+import { PoolStatePopulated } from 'models/connection/types';
 
-export const FundsGate = createGate();
+export const FundsGate = createGate<{ fundAddress: PublicKey }>();
 
-export const $funds = app.createStore<PublicKeyAndAccount<PoolState>[]>([]);
+export const $funds = app.createStore<
+  PublicKeyAndAccount<PoolStatePopulated>[]
+>([]);
 
 // $funds.on(findFundsFx.doneData, (_, funds) => funds);
 

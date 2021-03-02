@@ -1,13 +1,13 @@
-import { PublicKeyAndAccount } from '@solana/web3.js';
+import { PublicKey, PublicKeyAndAccount } from '@solana/web3.js';
 import { app } from 'models/app';
-import { PoolState } from '../../../../js/lib/fund';
+import { PoolStatePopulated } from './types';
 
 export const findFundFx = app.createEffect<
-  void,
-  PublicKeyAndAccount<PoolState>
+  { fundAddress: PublicKey },
+  PublicKeyAndAccount<PoolStatePopulated>
 >();
 
 export const findFundsFx = app.createEffect<
   void,
-  PublicKeyAndAccount<PoolState>[]
+  PublicKeyAndAccount<PoolStatePopulated>[]
 >();
