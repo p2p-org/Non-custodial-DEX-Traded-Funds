@@ -224,10 +224,12 @@ export const FundRow: FC<Props> = ({ fund }) => {
       return [];
     }
 
-    return assetWeights.map((weight, index) => ({
-      mintAddress: assets[index].mint,
-      weight: weight / 10,
-    }));
+    return assetWeights
+      .map((weight, index) => ({
+        mintAddress: assets[index].mint,
+        weight: weight / 10,
+      }))
+      .sort((a, b) => b.weight - a.weight);
   }, [fund]);
 
   const handleOpenInvestModalClick = () => {
