@@ -84,56 +84,56 @@ fn main() -> Result<()> {
 
     // Mint to initializer
 
-    let initializer_sol_token_account = mint_to(
+    let _initializer_sol_token_account = mint_to(
         &initializer_account,
         "initializer_sol_token_account",
         &sol_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_ftt_token_account = mint_to(
+    let _initializer_ftt_token_account = mint_to(
         &initializer_account,
         "initializer_ftt_token_account",
         &ftt_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_ren_token_account = mint_to(
+    let _initializer_ren_token_account = mint_to(
         &initializer_account,
         "initializer_ren_token_account",
         &ren_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_srm_token_account = mint_to(
+    let _initializer_srm_token_account = mint_to(
         &initializer_account,
         "initializer_srm_token_account",
         &srm_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_sushi_token_account = mint_to(
+    let _initializer_sushi_token_account = mint_to(
         &initializer_account,
         "initializer_sushi_token_account",
         &sushi_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_ray_token_account = mint_to(
+    let _initializer_ray_token_account = mint_to(
         &initializer_account,
         "initializer_ray_token_account",
         &ray_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_fida_token_account = mint_to(
+    let _initializer_fida_token_account = mint_to(
         &initializer_account,
         "initializer_fida_token_account",
         &fida_token_mint.pubkey(),
         &mut client,
     );
 
-    let initializer_usdc_token_account = mint_to(
+    let _initializer_usdc_token_account = mint_to(
         &initializer_account,
         "initializer_usdc_token_account",
         &usdc_token_mint.pubkey(),
@@ -157,7 +157,7 @@ fn main() -> Result<()> {
         spl_token_swap::id()
     };
 
-    let sol_usdc_swap_data = create_swap(
+    let _sol_usdc_swap_data = create_swap(
         &mut client,
         &swap_program_id,
         &initializer_account,
@@ -171,7 +171,7 @@ fn main() -> Result<()> {
         fees.clone(),
     )?;
 
-    let ftt_usdc_swap_data = create_swap(
+    let _ftt_usdc_swap_data = create_swap(
         &mut client,
         &swap_program_id,
         &initializer_account,
@@ -185,7 +185,7 @@ fn main() -> Result<()> {
         fees.clone(),
     )?;
 
-    let ren_usdc_swap_data = create_swap(
+    let _ren_usdc_swap_data = create_swap(
         &mut client,
         &swap_program_id,
         &initializer_account,
@@ -199,7 +199,7 @@ fn main() -> Result<()> {
         fees.clone(),
     )?;
 
-    let srm_usdc_swap_data = create_swap(
+    let _srm_usdc_swap_data = create_swap(
         &mut client,
         &swap_program_id,
         &initializer_account,
@@ -213,7 +213,7 @@ fn main() -> Result<()> {
         fees.clone(),
     )?;
 
-    let sushi_usdc_swap_data = create_swap(
+    let _sushi_usdc_swap_data = create_swap(
         &mut client,
         &swap_program_id,
         &initializer_account,
@@ -227,7 +227,7 @@ fn main() -> Result<()> {
         fees.clone(),
     )?;
 
-    let ray_usdc_swap_data = create_swap(
+    let _ray_usdc_swap_data = create_swap(
         &mut client,
         &swap_program_id,
         &initializer_account,
@@ -241,7 +241,7 @@ fn main() -> Result<()> {
         fees.clone(),
     )?;
 
-    let fida_usdc_swap_data = create_swap(
+    let _fida_usdc_swap_data = create_swap(
         &mut client,
         &swap_program_id,
         &initializer_account,
