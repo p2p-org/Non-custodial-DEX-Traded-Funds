@@ -48,5 +48,3 @@ forward({
   from: AppGate.open,
   to: fetchRatesFx,
 });
-
-$ratesMap.watch((state) => console.log(111, state));

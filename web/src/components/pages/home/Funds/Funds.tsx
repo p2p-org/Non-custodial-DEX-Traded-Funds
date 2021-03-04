@@ -2,13 +2,12 @@ import React, { FC, HTMLAttributes } from 'react';
 
 import { styled } from '@linaria/react';
 import classNames from 'classnames';
-import { useGate, useStore } from 'effector-react';
-import { PublicKey } from '@solana/web3.js';
-import { $ratesMap } from '../../../models/rates';
+import { useStore } from 'effector-react';
+import { $funds } from 'models/connection';
+import { $connected } from '../../../../models/wallet';
 import { FundRow } from './FundRow';
 import { Column } from './common/Column';
 import { Selector } from './Selector';
-import { $funds, FundsGate } from './model';
 
 const Wrapper = styled.div``;
 
@@ -55,18 +54,11 @@ const FundList = styled.div`
   margin-top: 20px;
 `;
 
-// TODO: temp
-const fundAddress = new PublicKey(
-  't72redTRJkPtUmTWWvPyjnkFKGVrHakv3DBQTheY4oD',
-);
-
 export const Funds: FC<HTMLAttributes<HTMLDivElement>> = ({
   style,
   className,
 }) => {
-  // TODO: temp
-  useGate(FundsGate, { fundAddress });
-
+  const connected = useStore($connected);
   const funds = useStore($funds);
 
   return (
@@ -87,9 +79,11 @@ export const Funds: FC<HTMLAttributes<HTMLDivElement>> = ({
             <Selector>Since inception</Selector>
           </ColumnName>
         </Column>
-        <Column className={classNames({ balance: true })}>
-          <ColumnName>Balance</ColumnName>
-        </Column>
+        {connected ? (
+          <Column className={classNames({ balance: true })}>
+            <ColumnName>Balance</ColumnName>
+          </Column>
+        ) : null}
       </ColumnsHeader>
       <FundList>
         {funds.map((fund) => (

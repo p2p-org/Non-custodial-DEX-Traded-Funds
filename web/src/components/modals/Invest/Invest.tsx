@@ -1,10 +1,13 @@
 import React, { FC } from 'react';
 
 import { styled } from '@linaria/react';
+import { useGate } from 'effector-react';
 import { Modal } from 'components/common/Modal';
 import { Button } from 'components/ui/Button';
 import { Avatar } from 'components/common/Avatar';
 import { Input } from 'components/ui/Input';
+import { FundType } from '../../../models/connection/types';
+import { investClicked, InvestGate } from './model';
 
 const WrapperModal = styled(Modal)`
   flex-basis: 512px;
@@ -111,10 +114,13 @@ const InvestButton = styled(Button)`
 `;
 
 interface Props {
+  fund: FundType;
   close: () => void;
 }
 
-export const Invest: FC<Props> = ({ close }) => {
+export const Invest: FC<Props> = ({ fund, close }) => {
+  useGate(InvestGate, fund);
+
   return (
     <WrapperModal title="Invest" close={close}>
       <Wrapper>
@@ -144,7 +150,7 @@ export const Invest: FC<Props> = ({ close }) => {
           </InfoLine>
         </TransactionInfoWrapper>
         <Footer>
-          <InvestButton full primary>
+          <InvestButton full primary onClick={investClicked}>
             Invest now
           </InvestButton>
         </Footer>
