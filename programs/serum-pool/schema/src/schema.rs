@@ -11,6 +11,12 @@ use solana_program::pubkey::Pubkey;
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Address(Pubkey);
 
+impl Address {
+    pub fn pubkey(&self) -> Pubkey {
+        self.0
+    }
+}
+
 impl From<Address> for Pubkey {
     fn from(address: Address) -> Self {
         address.0
