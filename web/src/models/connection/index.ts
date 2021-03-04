@@ -1,13 +1,17 @@
 import { PublicKey, PublicKeyAndAccount } from '@solana/web3.js';
 import { app } from 'models/app';
-import { PoolStatePopulated } from './types';
+import { TokenSwapType } from './layouts/tokenSwap';
+import { FundType } from './types';
 
-export const findFundFx = app.createEffect<
-  { fundAddress: PublicKey },
-  PublicKeyAndAccount<PoolStatePopulated>
->();
+/**
+ * Stores
+ */
+export const $funds = app.createStore<FundType[]>([]);
 
-export const findFundsFx = app.createEffect<
-  void,
-  PublicKeyAndAccount<PoolStatePopulated>[]
->();
+/**
+ * Effects
+ */
+export const findFundFx = app.createEffect<PublicKey, FundType>();
+
+export const findFundsFx = app.createEffect<void, FundType[]>();
+export const findPoolsFx = app.createEffect<void, TokenSwapType[]>();

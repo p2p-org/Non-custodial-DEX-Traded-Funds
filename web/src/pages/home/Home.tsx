@@ -2,7 +2,7 @@ import React from 'react';
 import { styled } from '@linaria/react';
 import { Header } from 'components/common/Header';
 import { MainContainer } from 'components/common/MainContainer';
-import { Funds } from './Funds';
+import { Funds } from '../../components/pages/home/Funds';
 
 const Wrapper = styled.div`
   min-height: 100%;

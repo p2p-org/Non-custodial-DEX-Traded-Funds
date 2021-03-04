@@ -19,3 +19,8 @@ export const DTF_PROGRAM_ID = new PublicKey(
   process.env.REACT_APP_DTF_PROGRAM_ID ||
     'HWEaSAnjKNADwA2ZopatwCM5BqrnMCPQBKAphf1s6XNW',
 );
+
+export const SWAP_PROGRAM_ID = new PublicKey(
+  process.env.REACT_APP_SWAP_PROGRAM_ID ||
+    'SwaPpA9LAaLfeLi3a68M4DjnLqgtticKg6CnyNwgAC8',
+);

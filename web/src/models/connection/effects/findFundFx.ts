@@ -8,7 +8,7 @@ import {
   TokenPopulated,
 } from '../types';
 
-findFundFx.use(async ({ fundAddress }) => {
+findFundFx.use(async (fundAddress) => {
   const connection = getConnection();
 
   const result = await connection.getAccountInfo(fundAddress);

@@ -12,13 +12,15 @@ import {
   MODAL_INVEST,
   MODAL_WITHDRAW,
 } from 'components/common/ModalManager/constants';
-import { shortAddress } from 'utils/common';
+import { moneyFormat, shortAddress } from 'utils/common';
 import { TOKENS } from 'config/tokens';
 import { FUNDS } from 'config/funds';
-import { PoolState } from '../../../../../../js/lib/fund';
+import { PoolState } from '../../../../../../../js/lib/fund';
 import { Column } from '../common/Column';
-import { $ratesMap } from '../../../../models/rates';
-import { PoolStatePopulated } from '../../../../models/connection/types';
+import { $ratesMap } from '../../../../../models/rates';
+import { PoolStatePopulated } from '../../../../../models/connection/types';
+import { $connected } from '../../../../../models/wallet';
+import { TokenShare } from './TokenShare';
 
 const TopWrapper = styled.div`
   display: flex;
@@ -124,35 +126,13 @@ const TokenSharesRow = styled.div`
   justify-content: space-between;
 `;
 
-const TokenShare = styled.div`
-  display: flex;
-  align-items: center;
-
-  min-width: 108px;
-
-  color: #000000;
-  font-family: Titillium Web, sans-serif;
-  font-size: 12px;
-  line-height: 140%;
-`;
-
-const TokenName = styled.div`
-  margin-left: 12px;
-
-  font-weight: 600;
-`;
-
-const TokenShareValue = styled.div`
-  display: inline-block;
-
-  font-weight: 400;
-`;
-
 interface Props {
   fund: PublicKeyAndAccount<PoolStatePopulated>;
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export const FundRow: FC<Props> = ({ fund }) => {
+  const connected = useStore($connected);
   const ratesMap = useStore($ratesMap);
 
   const fundMarketCap = useMemo(
@@ -233,7 +213,10 @@ export const FundRow: FC<Props> = ({ fund }) => {
   }, [fund]);
 
   const handleOpenInvestModalClick = () => {
-    openModalFx({ modalType: MODAL_INVEST });
+    openModalFx({
+      modalType: MODAL_INVEST,
+      props: { fund },
+    });
   };
 
   const handleOpenWithdrawModalClick = (
@@ -241,7 +224,10 @@ export const FundRow: FC<Props> = ({ fund }) => {
   ) => {
     e.stopPropagation();
 
-    openModalFx({ modalType: MODAL_WITHDRAW });
+    openModalFx({
+      modalType: MODAL_WITHDRAW,
+      props: { fund },
+    });
   };
 
   return (
@@ -258,58 +244,45 @@ export const FundRow: FC<Props> = ({ fund }) => {
           title={String(fundMarketCap || '')}
           className={classNames({ marketCap: true })}
         >
-          {new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-          }).format(fundMarketCap)}
+          {moneyFormat(fundMarketCap)}
         </ColumnValue>
         <ColumnValue
           title={String(fundPrice || '')}
           className={classNames({ price: true })}
         >
-          {new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-          }).format(fundPrice)}
+          {moneyFormat(fundPrice)}
         </ColumnValue>
         <ColumnValue className={classNames({ since: true, profit: true })}>
           + 420.01%
         </ColumnValue>
-        <ColumnValue className={classNames({ balance: true })}>
-          <div>48.00 ABDFS</div>
-          <AdditionalInfo>Valuation: $5952</AdditionalInfo>
-        </ColumnValue>
+        {connected ? (
+          <>
+            <ColumnValue className={classNames({ balance: true })}>
+              <div>48.00 ABDFS</div>
+              <AdditionalInfo>Valuation: $5952</AdditionalInfo>
+            </ColumnValue>
 
-        <ColumnButtons>
-          <ButtonStyled
-            primary
-            disabled={false}
-            onClick={handleOpenWithdrawModalClick}
-          >
-            Withdraw
-          </ButtonStyled>
-          <ButtonStyled primary>+ Invest</ButtonStyled>
-        </ColumnButtons>
+            <ColumnButtons>
+              <ButtonStyled
+                primary
+                disabled={false}
+                onClick={handleOpenWithdrawModalClick}
+              >
+                Withdraw
+              </ButtonStyled>
+              <ButtonStyled primary>+ Invest</ButtonStyled>
+            </ColumnButtons>
+          </>
+        ) : null}
       </TopWrapper>
       <BottomWrapper>
         <TokenSharesRow>
-          {tokens.map((tokenWeight) => {
-            const tokenMeta = TOKENS.devnet.find(
-              (token) =>
-                token.mintAddress === tokenWeight.mintAddress.toBase58(),
-            );
-
-            return (
-              <TokenShare key={tokenWeight.mintAddress.toBase58()}>
-                <Avatar size={18} src={tokenMeta?.icon} />
-                <TokenName>
-                  {tokenMeta?.tokenName ||
-                    shortAddress(tokenWeight.mintAddress.toBase58())}{' '}
-                  <TokenShareValue>{tokenWeight.weight}%</TokenShareValue>
-                </TokenName>
-              </TokenShare>
-            );
-          })}
+          {tokens.map((tokenWeight) => (
+            <TokenShare
+              key={tokenWeight.mintAddress.toBase58()}
+              tokenWeight={tokenWeight}
+            />
+          ))}
         </TokenSharesRow>
       </BottomWrapper>
     </Wrapper>

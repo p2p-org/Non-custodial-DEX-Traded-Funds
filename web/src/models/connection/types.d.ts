@@ -28,3 +28,5 @@ interface PoolStatePopulated extends PoolState {
   }[];
   poolTokenMintPopulated?: TokenPopulated;
 }
+
+type FundType = PublicKeyAndAccount<PoolStatePopulated>;
