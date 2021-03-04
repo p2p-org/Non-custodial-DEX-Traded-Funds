@@ -68,9 +68,11 @@ fn main() -> Result<()> {
         .create_account(&fund_program_id, fund_account_data_len)
         .print_in_place("fund_account");
 
-    let (fund_vault_authority, seed) =
+    let (fund_vault_authority, fund_vault_authority_nonce) =
         Pubkey::find_program_address(&[fund_account.pubkey().as_ref()], &fund_program_id);
-    println!("fund_vault_authority: {}, seed: {}", fund_vault_authority, seed);
+
+    fund_vault_authority.print("fund_vault_authority");
+    println!("fund_vault_authority_nonce: {}", fund_vault_authority_nonce);
 
     // Create fund token
     let fund_token_mint = token::create_token(&mut client, &fund_vault_authority, 6).print_in_place("fund_token_mint");
@@ -190,7 +192,7 @@ fn main() -> Result<()> {
 
     // Create fund
     let initialize_fund_request = InitializePoolRequest {
-        vault_signer_nonce: seed,
+        vault_signer_nonce: fund_vault_authority_nonce,
         assets_length: 7,
         pool_name: fund_name.to_string(),
         fee_rate: 1000,
@@ -248,7 +250,7 @@ fn main() -> Result<()> {
     assert_eq!(pool_state.pool_token_mint.as_ref(), &fund_token_mint.pubkey());
     assert_eq!(pool_state.assets.len(), 7);
     assert_eq!(pool_state.vault_signer.as_ref(), &fund_vault_authority);
-    assert_eq!(pool_state.vault_signer_nonce, seed);
+    assert_eq!(pool_state.vault_signer_nonce, fund_vault_authority_nonce);
     assert_eq!(pool_state.name.as_str(), fund_name);
     assert_eq!(pool_state.fee_rate, 1000);
 
