@@ -6,9 +6,9 @@ import { $ratesMap, fetchRatesFx } from './index';
 
 const CRYPTO_COMPARE_API_URL = 'https://min-api.cryptocompare.com/data';
 
-$ratesMap.on(fetchRatesFx.doneData, (state, rates) => {
+$ratesMap.on(fetchRatesFx.doneData, (state, newRates) => {
   const newState = { ...state };
-  rates.map((rate) => (newState[rate.symbol] = rate.rate));
+  newRates.map((rate) => (newState[rate.symbol] = rate.rate));
   return newState;
 });
 

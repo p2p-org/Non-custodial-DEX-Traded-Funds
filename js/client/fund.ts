@@ -198,6 +198,11 @@ export const schema = new Map<Function, any>([
   ],
 ]);
 
+export enum PoolAction {
+  Create = 1,
+  Redeem = 2,
+}
+
 export class Fund {
   fundProgramId: PublicKey;
 
@@ -292,6 +297,73 @@ export class Fund {
     tokenProgramId: PublicKey,
     amount: BN,
   ): TransactionInstruction {
+    return Fund.createPoolActionInstruction(
+      fundProgramId,
+      fundAccount,
+      fundTokenMint,
+      fundVaultAccounts,
+      fundVaultAuthority,
+      userPoolTokenAccount,
+      userAssetsAccounts,
+      authorityUserAccounts,
+      lqdFeeAccount,
+      initializerFeeAccount,
+      refferFeeVault,
+      tokenProgramId,
+      PoolAction.Create,
+      amount,
+    );
+  }
+
+  static createRedeemInstruction(
+    fundProgramId: PublicKey,
+    fundAccount: PublicKey,
+    fundTokenMint: PublicKey,
+    fundVaultAccounts: PublicKey[],
+    fundVaultAuthority: PublicKey,
+    userPoolTokenAccount: PublicKey,
+    userAssetsAccounts: PublicKey[],
+    authorityUserAccounts: PublicKey,
+    lqdFeeAccount: PublicKey,
+    initializerFeeAccount: PublicKey,
+    refferFeeVault: PublicKey,
+    tokenProgramId: PublicKey,
+    amount: BN,
+  ): TransactionInstruction {
+    return Fund.createPoolActionInstruction(
+      fundProgramId,
+      fundAccount,
+      fundTokenMint,
+      fundVaultAccounts,
+      fundVaultAuthority,
+      userPoolTokenAccount,
+      userAssetsAccounts,
+      authorityUserAccounts,
+      lqdFeeAccount,
+      initializerFeeAccount,
+      refferFeeVault,
+      tokenProgramId,
+      PoolAction.Redeem,
+      amount,
+    );
+  }
+
+  static createPoolActionInstruction(
+    fundProgramId: PublicKey,
+    fundAccount: PublicKey,
+    fundTokenMint: PublicKey,
+    fundVaultAccounts: PublicKey[],
+    fundVaultAuthority: PublicKey,
+    userPoolTokenAccount: PublicKey,
+    userAssetsAccounts: PublicKey[],
+    authorityUserAccounts: PublicKey,
+    lqdFeeAccount: PublicKey,
+    initializerFeeAccount: PublicKey,
+    refferFeeVault: PublicKey,
+    tokenProgramId: PublicKey,
+    poolActionType: number,
+    amount: BN,
+  ): TransactionInstruction {
     const keys = [
       { pubkey: fundAccount, isSigner: false, isWritable: true },
       { pubkey: fundTokenMint, isSigner: false, isWritable: true },
@@ -307,7 +379,7 @@ export class Fund {
     ];
 
     const executePoolAction = new ExecutePoolAction({
-      index: 0,
+      index: poolActionType,
       amount,
     });
 

@@ -73,8 +73,9 @@ interface Props {
 export const Input: FC<Props & InputHTMLAttributes<HTMLInputElement>> = ({
   prefix,
   postfix,
-  value,
   placeholder,
+  value,
+  onChange,
   style,
   className,
 }) => {
@@ -92,8 +93,9 @@ export const Input: FC<Props & InputHTMLAttributes<HTMLInputElement>> = ({
     <WrapperLabel style={style} className={classNames(className, { isFocus })}>
       <Somefix className={classNames({ left: true })}>{prefix}</Somefix>
       <InputElement
-        value={value}
         placeholder={placeholder}
+        value={value}
+        onChange={onChange}
         onFocus={handleFocus}
         onBlur={handleBlur}
       />

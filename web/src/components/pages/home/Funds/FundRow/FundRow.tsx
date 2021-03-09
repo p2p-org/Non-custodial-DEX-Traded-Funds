@@ -12,14 +12,13 @@ import {
   MODAL_INVEST,
   MODAL_WITHDRAW,
 } from 'components/common/ModalManager/constants';
-import { moneyFormat, shortAddress } from 'utils/common';
+import { moneyFormat } from 'utils/common';
 import { TOKENS } from 'config/tokens';
 import { FUNDS } from 'config/funds';
-import { PoolState } from '../../../../../../../js/lib/fund';
+import { $ratesMap } from 'models/rates';
+import { PoolStatePopulated } from 'models/types';
+import { $connected } from 'models/wallet';
 import { Column } from '../common/Column';
-import { $ratesMap } from '../../../../../models/rates';
-import { PoolStatePopulated } from '../../../../../models/connection/types';
-import { $connected } from '../../../../../models/wallet';
 import { TokenShare } from './TokenShare';
 
 const TopWrapper = styled.div`
@@ -92,17 +91,19 @@ const Wrapper = styled.div`
   box-shadow: 0 8px 8px rgba(0, 0, 0, 0.03);
   border-radius: 12px;
 
-  cursor: pointer;
+  &.isHoverable {
+    cursor: pointer;
 
-  transition: box-shadow 100ms cubic-bezier(0.64, 0, 0.35, 1) 0s;
+    transition: box-shadow 100ms cubic-bezier(0.64, 0, 0.35, 1) 0s;
 
-  &:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    &:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 
-    ${ColumnButtons} {
-      opacity: 1;
+      ${ColumnButtons} {
+        opacity: 1;
 
-      visibility: visible;
+        visibility: visible;
+      }
     }
   }
 `;
@@ -231,12 +232,20 @@ export const FundRow: FC<Props> = ({ fund }) => {
   };
 
   return (
-    <Wrapper onClick={handleOpenInvestModalClick}>
+    <Wrapper
+      onClick={connected ? handleOpenInvestModalClick : undefined}
+      className={classNames({ isHoverable: connected })}
+    >
       <TopWrapper>
         <Column className={classNames({ name: true })}>
           <Avatar src={fundMeta?.icon} />
           <InfoWrapper>
-            <FundName>{fundMeta?.fundName}</FundName>
+            {/* TODO: original name*/}
+            <FundName>
+              {fundMeta
+                ? `${fundMeta.fundName} (${fundMeta.fundSymbol})`
+                : fund.account.data.name}
+            </FundName>
             <FundDate>Inception date: Feb 26, 2021</FundDate>
           </InfoWrapper>
         </Column>
@@ -258,7 +267,7 @@ export const FundRow: FC<Props> = ({ fund }) => {
         {connected ? (
           <>
             <ColumnValue className={classNames({ balance: true })}>
-              <div>48.00 ABDFS</div>
+              <div>48.00 {fundMeta?.fundSymbol}</div>
               <AdditionalInfo>Valuation: $5952</AdditionalInfo>
             </ColumnValue>
 

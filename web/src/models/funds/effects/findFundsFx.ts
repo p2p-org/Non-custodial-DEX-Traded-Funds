@@ -3,7 +3,6 @@ import { PublicKey } from '@solana/web3.js';
 import { complement, isNil } from 'ramda';
 import { getConnection } from 'api/connection';
 import { DTF_PROGRAM_ID } from 'config';
-import { GetProgramAccountsRpcResult } from '../structs';
 import { findFundsFx } from '..';
 import { Fund } from '../../../../../js/lib/fund';
 
@@ -25,7 +24,7 @@ findFundsFx.use(async () => {
     },
   ]);
 
-  const res = GetProgramAccountsRpcResult(unsafeRes);
+  const res = unsafeRes;
   if (res.error) {
     throw new Error(
       'failed to get accounts owned by program ' +

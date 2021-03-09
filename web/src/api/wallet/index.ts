@@ -9,6 +9,7 @@ import {
   TransactionInstructionCtorFields,
 } from '@solana/web3.js';
 
+import nacl from 'tweetnacl';
 import { postTransactionSleepMS } from 'config';
 import { sleep } from 'utils/common';
 
@@ -111,7 +112,16 @@ const defaultSendOptions = {
 
 async function awaitConfirmation(
   signature: string,
-  commitment: 'max' | 'recent' | 'root' | 'single' | 'singleGossip' | undefined,
+  commitment:
+    | 'processed'
+    | 'confirmed'
+    | 'finalized'
+    | 'recent' // Deprecated as of v1.5.5
+    | 'single' // Deprecated as of v1.5.5
+    | 'singleGossip' // Deprecated as of v1.5.5
+    | 'root' // Deprecated as of v1.5.5
+    | 'max'
+    | undefined,
 ) {
   console.log(`Submitted transaction ${signature}, awaiting confirmation`);
   await confirmTransaction(signature, commitment);
@@ -141,6 +151,23 @@ export const sendTransaction = async (
   console.log('Sending signature request to wallet');
   const signed = await wallet.sign(transaction);
   console.log('Got signature, submitting transaction');
+
+  for (const { signature, publicKey } of signed.signatures) {
+    if (!signature) {
+      console.log('1 false', signature, publicKey.toBase58(), transaction);
+    } else if (
+      !nacl.sign.detached.verify(
+        signed.serializeMessage(),
+        signature,
+        publicKey.toBuffer(),
+      )
+    ) {
+      console.log('2 false', signature, publicKey.toBase58(), transaction);
+    }
+  }
+
+  console.log(111);
+
   const signature = await connection.sendRawTransaction(signed.serialize(), {
     preflightCommitment,
   });

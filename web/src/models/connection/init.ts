@@ -1,21 +1,20 @@
-/* eslint-disable import/export */
-import { PublicKey } from '@solana/web3.js';
-import { AppGate } from 'models/app';
-import { $funds, findFundFx } from './index';
+import { $tokenAccounts, getParsedTokenAccountsByOwnerFx } from './index';
 
-export * from './effects/findFundFx';
-export * from './effects/findFundsFx';
-export * from './effects/findPoolsFx';
+import './effects';
 
-$funds.on(findFundFx.doneData, (state, newFund) => [
-  ...state.filter((find) => !find.pubkey.equals(newFund.pubkey)),
-  newFund,
-]);
+$tokenAccounts.on(
+  getParsedTokenAccountsByOwnerFx.doneData,
+  (_, tokenAccounts) => {
+    if (tokenAccounts.length === 0) {
+      return [];
+    }
 
-// TODO: temp
-const fundAddress = new PublicKey(
-  't72redTRJkPtUmTWWvPyjnkFKGVrHakv3DBQTheY4oD',
+    console.log(333, tokenAccounts);
+
+    return tokenAccounts.sort(
+      (a, b) =>
+        b.account.data.tokenAmount.uiAmount -
+        a.account.data.tokenAmount.uiAmount,
+    );
+  },
 );
-AppGate.open.watch(() => {
-  findFundFx(fundAddress);
-});
