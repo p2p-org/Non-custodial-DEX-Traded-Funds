@@ -240,12 +240,25 @@ impl Fund {
                 let vault_signer = next_account_info(accounts_iter)?;
                 let basic_asset_vault = next_account_info(accounts_iter)?;
                 let spl_token_program = next_account_info(accounts_iter)?;
-                let token_swaps = next_account_infos(accounts_iter, assets_count)?;
-                let swap_authorities = next_account_infos(accounts_iter, assets_count)?;
-                let swap_assets = next_account_infos(accounts_iter, assets_count)?;
-                let swap_basic_asset = next_account_info(accounts_iter)?;
-                let swap_pool_token_mints = next_account_infos(accounts_iter, assets_count)?;
-                let swap_fees = next_account_infos(accounts_iter, assets_count)?;
+
+                let mut swaps = Vec::with_capacity(assets_count);
+                for _ in 0..assets_count {
+                    let swap = next_account_info(accounts_iter)?;
+                    let authority = next_account_info(accounts_iter)?;
+                    let asset = next_account_info(accounts_iter)?;
+                    let basic_asset = next_account_info(accounts_iter)?;
+                    let pool_token_mint = next_account_info(accounts_iter)?;
+                    let fee = next_account_info(accounts_iter)?;
+
+                    swaps.push(SwapAccounts {
+                        swap,
+                        authority,
+                        asset,
+                        basic_asset,
+                        pool_token_mint,
+                        fee,
+                    });
+                }
 
                 // Check the accounts
                 check_account_address(vault_signer, &pool_state.vault_signer, stringify!(vault_signer))?;
@@ -262,34 +275,36 @@ impl Fund {
                 for i in 0..assets_count {
                     let asset = &pool_state.assets[i];
                     let asset_vault = &pool_vaults[i];
-                    let token_swap = &token_swaps[i];
-                    let swap_asset = &swap_assets[i];
+                    let swap = swaps[i].swap;
+                    let swap_asset = swaps[i].asset;
+                    let swap_basic_asset = swaps[i].basic_asset;
 
                     msg!("Check accounts for asset number {}", i);
                     check_account_address(asset_vault, &asset.vault_address, stringify!(asset_vault))?;
                     check_token_account(asset_vault, &asset.mint, Some(&pool_state.vault_signer))?;
-                    if token_swap.owner != &spl_token_swap::id() {
+                    if swap.owner != &spl_token_swap::id() {
                         msg!("Token-swap account {} not owned by spl-token-swap program", i);
                         return Err(ProgramError::InvalidAccountData);
                     }
                     check_token_account(swap_asset, &asset.mint, Some(&pool_state.vault_signer))?;
+                    check_token_account(
+                        swap_basic_asset,
+                        &fund_state.basic_asset.mint,
+                        Some(&pool_state.vault_signer),
+                    )?;
                 }
-                check_token_account(
-                    swap_basic_asset,
-                    &fund_state.basic_asset.mint,
-                    Some(&pool_state.vault_signer),
-                )?;
 
                 // Calc the current amounts in the basic asset
                 let basic_asset_vault_token_account = TokenAccount::unpack(&basic_asset_vault.try_borrow_data()?)?;
-                let swap_basic_asset_token_account = TokenAccount::unpack(&swap_basic_asset.try_borrow_data()?)?;
                 let mut current_asset_amounts = Vec::with_capacity(pool_vaults.len());
                 let mut asset_vault_token_accounts = Vec::with_capacity(pool_vaults.len());
                 let mut total_amount = basic_asset_vault_token_account.amount as u128;
 
                 for (i, vault) in pool_vaults.iter().enumerate() {
                     let vault_token_account = TokenAccount::unpack(&vault.try_borrow_data()?)?;
-                    let swap_asset_token_account = TokenAccount::unpack(&swap_assets[i].try_borrow_data()?)?;
+                    let swap_asset_token_account = TokenAccount::unpack(&swaps[i].asset.try_borrow_data()?)?;
+                    let swap_basic_asset_token_account =
+                        TokenAccount::unpack(&swaps[i].basic_asset.try_borrow_data()?)?;
                     let amount = vault_token_account.amount as u128 * swap_asset_token_account.amount as u128
                         / swap_basic_asset_token_account.amount as u128;
 
@@ -332,15 +347,15 @@ impl Fund {
                         let swap_instruction = spl_token_swap::instruction::swap(
                             &spl_token_swap::id(),
                             &spl_token::id(),
-                            token_swaps[i].key,
-                            swap_authorities[i].key,
+                            swaps[i].swap.key,
+                            swaps[i].authority.key,
                             &pool_state.vault_signer,
                             pool_vaults[i].key,
-                            swap_assets[i].key,
-                            swap_basic_asset.key,
+                            swaps[i].asset.key,
+                            swaps[i].basic_asset.key,
                             basic_asset_vault.key,
-                            swap_pool_token_mints[i].key,
-                            swap_fees[i].key,
+                            swaps[i].pool_token_mint.key,
+                            swaps[i].fee.key,
                             None,
                             spl_token_swap::instruction::Swap {
                                 amount_in,
@@ -353,15 +368,15 @@ impl Fund {
                         })?;
 
                         let account_infos = vec![
-                            token_swaps[i].clone(),
-                            swap_authorities[i].clone(),
+                            swaps[i].swap.clone(),
+                            swaps[i].authority.clone(),
                             vault_signer.clone(),
                             pool_vaults[i].clone(),
-                            swap_assets[i].clone(),
-                            swap_basic_asset.clone(),
+                            swaps[i].asset.clone(),
+                            swaps[i].basic_asset.clone(),
                             basic_asset_vault.clone(),
-                            swap_pool_token_mints[i].clone(),
-                            swap_fees[i].clone(),
+                            swaps[i].pool_token_mint.clone(),
+                            swaps[i].fee.clone(),
                             spl_token_program.clone(),
                         ];
 
@@ -394,15 +409,15 @@ impl Fund {
                     let swap_instruction = spl_token_swap::instruction::swap(
                         &spl_token_swap::id(),
                         &spl_token::id(),
-                        token_swaps[i].key,
-                        swap_authorities[i].key,
+                        swaps[i].swap.key,
+                        swaps[i].authority.key,
                         &pool_state.vault_signer,
                         basic_asset_vault.key,
-                        swap_basic_asset.key,
-                        swap_assets[i].key,
+                        swaps[i].basic_asset.key,
+                        swaps[i].asset.key,
                         pool_vaults[i].key,
-                        swap_pool_token_mints[i].key,
-                        swap_fees[i].key,
+                        swaps[i].pool_token_mint.key,
+                        swaps[i].fee.key,
                         None,
                         spl_token_swap::instruction::Swap {
                             amount_in: amount_delta,
@@ -415,15 +430,15 @@ impl Fund {
                     })?;
 
                     let account_infos = vec![
-                        token_swaps[i].clone(),
-                        swap_authorities[i].clone(),
+                        swaps[i].swap.clone(),
+                        swaps[i].authority.clone(),
                         vault_signer.clone(),
                         basic_asset_vault.clone(),
-                        swap_basic_asset.clone(),
-                        swap_assets[i].clone(),
+                        swaps[i].basic_asset.clone(),
+                        swaps[i].asset.clone(),
                         pool_vaults[i].clone(),
-                        swap_pool_token_mints[i].clone(),
-                        swap_fees[i].clone(),
+                        swaps[i].pool_token_mint.clone(),
+                        swaps[i].fee.clone(),
                         spl_token_program.clone(),
                     ];
 
@@ -521,4 +536,13 @@ fn parse_token_account(account_info: &AccountInfo) -> Result<TokenAccount, Progr
         return Err(ProgramError::UninitializedAccount);
     }
     Ok(parsed)
+}
+
+struct SwapAccounts<'a, 'b> {
+    swap: &'a AccountInfo<'b>,
+    authority: &'a AccountInfo<'b>,
+    asset: &'a AccountInfo<'b>,
+    basic_asset: &'a AccountInfo<'b>,
+    pool_token_mint: &'a AccountInfo<'b>,
+    fee: &'a AccountInfo<'b>,
 }

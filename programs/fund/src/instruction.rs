@@ -53,12 +53,13 @@ pub enum FundInstructionInner {
     /// - `[writable]` Pool vault account for each of the N pool assets
     /// - `[]` Pool vault authority
     /// - `[writable]` Fund vault account of basic asset
-    /// - `[]` Token-swap account for each of the N pool assets
-    /// - `[]` Swap authority for each of the N pool assets
-    /// - `[writable]` Swap asset account for each of the N pool assets
-    /// - `[writable]` Swap basic asset account
-    /// - `[writable]` Swap pool token mint, to generate trading fees for each of the N pool assets
-    /// - `[writable]` Swap fee account, to receive trading fees for each of the N pool assets
+    /// For each of the N pool assets:
+    ///   * `[]` Token-swap account
+    ///   * `[]` Swap authority
+    ///   * `[writable]` Swap asset account
+    ///   * `[writable]` Swap basic asset account
+    ///   * `[writable]` Swap pool token mint, to generate trading fees
+    ///   * `[writable]` Swap fee account, to receive trading fees
     Rebalance,
 
     /// Approves an account to spend tokens on behalf of the pool.
