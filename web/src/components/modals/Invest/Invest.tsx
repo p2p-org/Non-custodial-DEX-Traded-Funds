@@ -1,13 +1,25 @@
-import React, { FC } from 'react';
+import React, { FC, useMemo } from 'react';
 
 import { styled } from '@linaria/react';
-import { useGate } from 'effector-react';
+import { useGate, useStore } from 'effector-react';
+import BN from 'bn.js';
+import { Decimal } from 'decimal.js';
 import { Modal } from 'components/common/Modal';
 import { Button } from 'components/ui/Button';
 import { Avatar } from 'components/common/Avatar';
 import { Input } from 'components/ui/Input';
-import { FundType } from '../../../models/connection/types';
-import { investClicked, InvestGate } from './model';
+import { shortAddress } from 'utils/common';
+import { FundType } from '../../../models/types';
+import { FUNDS } from '../../../config/funds';
+import {
+  $amount,
+  $baseTokenAccount,
+  $isLoading,
+  changeAmount,
+  investClicked,
+  InvestGate,
+  setAmount,
+} from './model';
 
 const WrapperModal = styled(Modal)`
   flex-basis: 512px;
@@ -47,15 +59,30 @@ const InputsWrapper = styled.div`
   }
 `;
 
-const OptionsWrapper = styled.div`
+const BalanceWrapper = styled.div`
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
 
   padding: 12px 0 38px;
+`;
+
+const OptionsWrapper = styled.div`
+  display: flex;
 
   & > :not(:last-child) {
     margin-right: 10px;
   }
+`;
+
+const AvailableBalance = styled.div`
+  color: #a3a5ba;
+  font-family: Titillium Web, sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 24px;
+
+  cursor: pointer;
 `;
 
 const Option = styled.div`
@@ -120,29 +147,101 @@ interface Props {
 
 export const Invest: FC<Props> = ({ fund, close }) => {
   useGate(InvestGate, fund);
+  const baseTokenAccount = useStore($baseTokenAccount);
+  const amount = useStore($amount);
+  const isLoading = useStore($isLoading);
+
+  const fundMeta = useMemo(
+    () =>
+      FUNDS.devnet.find(
+        (fundItem) => fundItem.address === fund.pubkey.toBase58(),
+      ),
+    [fund],
+  );
+
+  const handleAllBalanceClick = () => {
+    if (!baseTokenAccount) {
+      return;
+    }
+
+    setAmount(new Decimal(baseTokenAccount.account.data.tokenAmount.uiAmount));
+  };
 
   return (
     <WrapperModal title="Invest" close={close}>
       <Wrapper>
         <InvestWrapper>
           <FundInfoWrapper>
-            <Avatar size={64} />
-            <FundName>ABDFS</FundName>
+            <Avatar size={64} src={fundMeta?.icon} />
+            <FundName>
+              {fundMeta
+                ? `${fundMeta.fundName} (${fundMeta.fundSymbol})`
+                : fund.account.data.name}
+            </FundName>
           </FundInfoWrapper>
           <InputsWrapper>
-            <Input prefix="Buy" postfix="ABDFS" placeholder="0.0" />
-            <Input prefix="Pay" postfix="USDC" placeholder="0.0" />
+            <Input
+              prefix="Buy"
+              postfix={
+                fundMeta
+                  ? fundMeta.fundSymbol
+                  : shortAddress(fund.account.data.poolTokenMint.toBase58())
+              }
+              placeholder="0.0"
+            />
+            <Input
+              prefix="Pay"
+              postfix="USDC"
+              placeholder="0.0"
+              value={amount.toString()}
+              onChange={changeAmount}
+            />
           </InputsWrapper>
-          <OptionsWrapper>
-            <Option>Max: 2665.708</Option>
-            <Option>1/2</Option>
-            <Option>$1/4</Option>
-          </OptionsWrapper>
+          {baseTokenAccount ? (
+            <BalanceWrapper>
+              <OptionsWrapper>
+                <Option onClick={handleAllBalanceClick}>
+                  Max: {baseTokenAccount.account.data.tokenAmount.uiAmount}
+                </Option>
+                <Option
+                  onClick={() =>
+                    setAmount(
+                      new Decimal(
+                        baseTokenAccount.account.data.tokenAmount.uiAmount / 2,
+                      ),
+                    )
+                  }
+                >
+                  1/2
+                </Option>
+                <Option
+                  onClick={() =>
+                    setAmount(
+                      new Decimal(
+                        baseTokenAccount.account.data.tokenAmount.uiAmount / 4,
+                      ),
+                    )
+                  }
+                >
+                  1/4
+                </Option>
+              </OptionsWrapper>
+              <AvailableBalance onClick={handleAllBalanceClick}>
+                Balance: {baseTokenAccount.account.data.tokenAmount.uiAmount}{' '}
+                USDC
+              </AvailableBalance>
+            </BalanceWrapper>
+          ) : null}
         </InvestWrapper>
         <TransactionInfoWrapper>
           <InfoLine>
             <InfoLeft>You’ll receive:</InfoLeft>
-            <InfoRight>21.1507 ABDFS</InfoRight>
+            <InfoRight>
+              21.1507{' '}
+              {fundMeta
+                ? fundMeta.fundSymbol
+                : shortAddress(fund.account.data.poolTokenMint.toBase58())}
+            </InfoRight>
           </InfoLine>
           <InfoLine>
             <InfoLeft>Transaction Fee:</InfoLeft>
@@ -150,8 +249,13 @@ export const Invest: FC<Props> = ({ fund, close }) => {
           </InfoLine>
         </TransactionInfoWrapper>
         <Footer>
-          <InvestButton full primary onClick={investClicked}>
-            Invest now
+          <InvestButton
+            full
+            primary
+            onClick={investClicked}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Loading...' : 'Invest now'}gst
           </InvestButton>
         </Footer>
       </Wrapper>

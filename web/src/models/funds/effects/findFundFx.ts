@@ -1,12 +1,12 @@
 import { path } from 'ramda';
 import { getConnection } from 'api/connection';
-import { findFundFx } from '..';
-import { Fund } from '../../../../../js/lib/fund';
 import {
   PoolStatePopulated,
   TokenAccountPopulated,
   TokenPopulated,
-} from '../types';
+} from 'models/types';
+import { findFundFx } from '..';
+import { Fund } from '../../../../../js/lib/fund';
 
 findFundFx.use(async (fundAddress) => {
   const connection = getConnection();
@@ -21,33 +21,47 @@ findFundFx.use(async (fundAddress) => {
     Buffer.from(result.data),
   ) as PoolStatePopulated;
 
-  const tokenAccounts = parsedData.assets
-    .map((asset) => asset.vaultAddress.toBase58())
-    .concat(parsedData.poolTokenMint.toBase58());
-
-  const tokenAccountsResult = await connection._rpcRequest(
-    'getMultipleAccounts',
-    [
-      tokenAccounts,
-      { commiment: connection.commitment, encoding: 'jsonParsed' },
-    ],
+  const addresses = [];
+  parsedData.assets.forEach((asset) =>
+    addresses.push(asset.vaultAddress.toBase58()),
   );
+  parsedData.assets.forEach((asset) => addresses.push(asset.mint.toBase58()));
+
+  addresses.push(parsedData.poolTokenMint.toBase58());
+
+  const accountsResult = await connection._rpcRequest('getMultipleAccounts', [
+    addresses,
+    { commiment: connection.commitment, encoding: 'jsonParsed' },
+  ]);
 
   parsedData.assets = parsedData.assets.map((asset, index) => {
     const vaultPopulated = path<TokenAccountPopulated>(
       ['result', 'value', index, 'data', 'parsed', 'info'],
-      tokenAccountsResult,
+      accountsResult,
+    );
+
+    const mintPopulated = path<TokenPopulated>(
+      [
+        'result',
+        'value',
+        parsedData.assets.length + index,
+        'data',
+        'parsed',
+        'info',
+      ],
+      accountsResult,
     );
 
     return {
       ...asset,
+      mintPopulated,
       vaultPopulated,
     };
   });
 
   parsedData.poolTokenMintPopulated = path<TokenPopulated>(
-    ['result', 'value', parsedData.assets.length, 'data', 'parsed', 'info'],
-    tokenAccountsResult,
+    ['result', 'value', parsedData.assets.length * 2, 'data', 'parsed', 'info'],
+    accountsResult,
   );
 
   return {
