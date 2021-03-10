@@ -1,5 +1,9 @@
 use std::ops::Deref;
 
+use anyhow::Result;
+use borsh::de::BorshDeserialize;
+use fund::state::FundState;
+use serum_pool::schema::PoolState;
 use solana_client::rpc_client::RpcClient;
 use solana_program::{hash::Hash, pubkey::Pubkey, system_instruction};
 use solana_sdk::{
@@ -52,6 +56,18 @@ impl Client {
         transaction.sign(&[self.payer(), &account], self.recent_blockhash());
         self.process_transaction(&transaction);
         account
+    }
+
+    pub fn get_fund_state(&self, fund_account: &Pubkey) -> Result<(PoolState, FundState)> {
+        let fund_account = self.get_account(fund_account)?;
+
+        let mut data = fund_account.data.as_slice();
+        let pool_state: PoolState = BorshDeserialize::deserialize(&mut data)?;
+
+        data = pool_state.custom_state.as_slice();
+        let fund_state: FundState = BorshDeserialize::deserialize(&mut data)?;
+
+        Ok((pool_state, fund_state))
     }
 }
 

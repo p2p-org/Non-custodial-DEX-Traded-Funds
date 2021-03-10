@@ -1,10 +1,9 @@
 use std::{env, str::FromStr};
 
 use anyhow::{anyhow, Result};
-use borsh::{de::BorshDeserialize, ser::BorshSerialize};
-use fund::state::FundState;
+use borsh::ser::BorshSerialize;
 use fund_tests::{client::Client, print::Print, token};
-use serum_pool::schema::{PoolAction, PoolRequest, PoolRequestInner, PoolRequestTag, PoolState};
+use serum_pool::schema::{PoolAction, PoolRequest, PoolRequestInner, PoolRequestTag};
 use solana_client::rpc_client::RpcClient;
 use solana_program::{
     instruction::{AccountMeta, Instruction},
@@ -49,7 +48,7 @@ fn main() -> Result<()> {
     ];
 
     let fund_account = Keypair::from_base58_string(&env::var("fund_account")?);
-    let (pool_state, fund_state) = get_fund_state(&client, &fund_account.pubkey())?;
+    let (pool_state, fund_state) = client.get_fund_state(&fund_account.pubkey())?;
 
     let fund_vault_authority = pool_state.vault_signer.pubkey();
     let fund_token_mint = pool_state.pool_token_mint.pubkey();
@@ -170,16 +169,4 @@ fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
-fn get_fund_state(client: &Client, fund_account: &Pubkey) -> Result<(PoolState, FundState)> {
-    let fund_account = client.get_account(fund_account)?;
-
-    let mut data = fund_account.data.as_slice();
-    let pool_state: PoolState = BorshDeserialize::deserialize(&mut data)?;
-
-    data = pool_state.custom_state.as_slice();
-    let fund_state: FundState = BorshDeserialize::deserialize(&mut data)?;
-
-    Ok((pool_state, fund_state))
 }

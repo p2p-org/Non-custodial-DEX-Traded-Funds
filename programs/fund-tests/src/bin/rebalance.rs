@@ -1,22 +1,13 @@
 use std::{env, str::FromStr};
 
 use anyhow::{anyhow, Result};
-use borsh::{de::BorshDeserialize, ser::BorshSerialize};
-use dotenv::dotenv;
-use fund::{
-    instruction::{FundInstructionInner, FundRequest, FundRequestTag, InitializeFundData},
-    state::FundState,
-};
-use fund_tests::{client::Client, print::Print, token};
-use serum_pool::schema::{
-    fee_owner::ID as POOL_FEE_OWNER_ID, InitializePoolRequest, PoolRequest, PoolRequestInner, PoolRequestTag,
-    PoolState, PoolStateTag,
-};
+use borsh::ser::BorshSerialize;
+use fund::instruction::{FundInstructionInner, FundRequest, FundRequestTag};
+use fund_tests::client::Client;
 use solana_client::rpc_client::RpcClient;
 use solana_program::{
     instruction::{AccountMeta, Instruction},
     pubkey::Pubkey,
-    system_program, sysvar,
 };
 use solana_sdk::{
     commitment_config::CommitmentConfig,
@@ -25,9 +16,15 @@ use solana_sdk::{
 };
 
 fn main() -> Result<()> {
-    dotenv().ok();
+    dotenv::from_filename(".env.local").ok();
 
     let fund_program_id = Pubkey::from_str(&env::var("FUND_PROGRAM_ID")?)?;
+    let swap_program_id = if let Ok(key) = env::var("SWAP_PROGRAM_ID") {
+        Pubkey::from_str(&key).unwrap()
+    } else {
+        spl_token_swap::id()
+    };
+
     let payer_account =
         read_keypair_file(env::var("PAYER_KEYPAIR_FILE")?).map_err(|err| anyhow!("Read keypair error: {}", err))?;
 
@@ -37,205 +34,234 @@ fn main() -> Result<()> {
         payer: payer_account,
     };
 
-    let initializer_account = if let Ok(base58) = env::var("initializer_account") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        client
-            .create_account(&system_program::id(), 0)
-            .print_in_place("initializer_account")
-    };
+    let initializer_account = Keypair::from_base58_string(&env::var("initializer_account")?);
 
-    // Create assets
-    let x_token_mint = if let Ok(base58) = env::var("x_token_mint") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 2).print_in_place("x_token_mint")
-    };
+    let fund_account = Keypair::from_base58_string(&env::var("fund_account")?);
+    let (pool_state, fund_state) = client.get_fund_state(&fund_account.pubkey())?;
 
-    let y_token_mint = if let Ok(base58) = env::var("y_token_mint") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 0).print_in_place("y_token_mint")
-    };
+    let fund_vault_authority = pool_state.vault_signer.pubkey();
+    let fund_token_mint = pool_state.pool_token_mint.pubkey();
+    let initializer_fee_account = pool_state.initializer_fee_vault.pubkey();
+    let lqd_fee_account = pool_state.lqd_fee_vault.pubkey();
 
-    let basic_token_mint = if let Ok(base58) = env::var("basic_token_mint") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        token::create_token(&mut client, &initializer_account.pubkey(), 2).print_in_place("basic_token_mint")
-    };
+    let fund_sol_token_vault_account = pool_state.assets[0].vault_address.pubkey();
+    let fund_ftt_token_vault_account = pool_state.assets[1].vault_address.pubkey();
+    let fund_ren_token_vault_account = pool_state.assets[2].vault_address.pubkey();
+    let fund_srm_token_vault_account = pool_state.assets[3].vault_address.pubkey();
+    let fund_sushi_token_vault_account = pool_state.assets[4].vault_address.pubkey();
+    let fund_ray_token_vault_account = pool_state.assets[5].vault_address.pubkey();
+    let fund_fida_token_vault_account = pool_state.assets[6].vault_address.pubkey();
+    let fund_usdc_token_vault_account = fund_state.basic_asset.vault_address.pubkey();
 
-    // Mint to user
-    let initializer_x_token_account = if let Ok(base58) = env::var("initializer_x_token_account") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        let initializer_x_token_account =
-            token::create_account(&mut client, &initializer_account.pubkey(), &x_token_mint.pubkey())
-                .print_in_place("initializer_x_token_account");
-        token::mint_to(
-            &mut client,
-            &initializer_account,
-            &x_token_mint.pubkey(),
-            &initializer_x_token_account.pubkey(),
-            1000,
-            2,
+    let sol_usdc_swap = Keypair::from_base58_string(&env::var("sol_usdc_swap")?);
+    let ftt_usdc_swap = Keypair::from_base58_string(&env::var("ftt_usdc_swap")?);
+    let ren_usdc_swap = Keypair::from_base58_string(&env::var("ren_usdc_swap")?);
+    let srm_usdc_swap = Keypair::from_base58_string(&env::var("srm_usdc_swap")?);
+    let sushi_usdc_swap = Keypair::from_base58_string(&env::var("sushi_usdc_swap")?);
+    let ray_usdc_swap = Keypair::from_base58_string(&env::var("ray_usdc_swap")?);
+    let fida_usdc_swap = Keypair::from_base58_string(&env::var("fida_usdc_swap")?);
+
+    let sol_usdc_swap_authority = Pubkey::from_str(&env::var("sol_usdc_swap_authority")?)?;
+    let ftt_usdc_swap_authority = Pubkey::from_str(&env::var("ftt_usdc_swap_authority")?)?;
+    let ren_usdc_swap_authority = Pubkey::from_str(&env::var("ren_usdc_swap_authority")?)?;
+    let srm_usdc_swap_authority = Pubkey::from_str(&env::var("srm_usdc_swap_authority")?)?;
+    let sushi_usdc_swap_authority = Pubkey::from_str(&env::var("sushi_usdc_swap_authority")?)?;
+    let ray_usdc_swap_authority = Pubkey::from_str(&env::var("ray_usdc_swap_authority")?)?;
+    let fida_usdc_swap_authority = Pubkey::from_str(&env::var("fida_usdc_swap_authority")?)?;
+
+    let sol_usdc_swap_token_sol = Keypair::from_base58_string(&env::var("sol_usdc_swap_token_sol")?);
+    let ftt_usdc_swap_token_ftt = Keypair::from_base58_string(&env::var("ftt_usdc_swap_token_ftt")?);
+    let ren_usdc_swap_token_ren = Keypair::from_base58_string(&env::var("ren_usdc_swap_token_ren")?);
+    let srm_usdc_swap_token_srm = Keypair::from_base58_string(&env::var("srm_usdc_swap_token_srm")?);
+    let sushi_usdc_swap_token_sushi = Keypair::from_base58_string(&env::var("sushi_usdc_swap_token_sushi")?);
+    let ray_usdc_swap_token_ray = Keypair::from_base58_string(&env::var("ray_usdc_swap_token_ray")?);
+    let fida_usdc_swap_token_fida = Keypair::from_base58_string(&env::var("fida_usdc_swap_token_fida")?);
+
+    let sol_usdc_swap_token_usdc = Keypair::from_base58_string(&env::var("sol_usdc_swap_token_usdc")?);
+    let ftt_usdc_swap_token_usdc = Keypair::from_base58_string(&env::var("ftt_usdc_swap_token_usdc")?);
+    let ren_usdc_swap_token_usdc = Keypair::from_base58_string(&env::var("ren_usdc_swap_token_usdc")?);
+    let srm_usdc_swap_token_usdc = Keypair::from_base58_string(&env::var("srm_usdc_swap_token_usdc")?);
+    let sushi_usdc_swap_token_usdc = Keypair::from_base58_string(&env::var("sushi_usdc_swap_token_usdc")?);
+    let ray_usdc_swap_token_usdc = Keypair::from_base58_string(&env::var("ray_usdc_swap_token_usdc")?);
+    let fida_usdc_swap_token_usdc = Keypair::from_base58_string(&env::var("fida_usdc_swap_token_usdc")?);
+
+    let sol_usdc_swap_pool_token_mint = Keypair::from_base58_string(&env::var("sol_usdc_swap_pool_token_mint")?);
+    let ftt_usdc_swap_pool_token_mint = Keypair::from_base58_string(&env::var("ftt_usdc_swap_pool_token_mint")?);
+    let ren_usdc_swap_pool_token_mint = Keypair::from_base58_string(&env::var("ren_usdc_swap_pool_token_mint")?);
+    let srm_usdc_swap_pool_token_mint = Keypair::from_base58_string(&env::var("srm_usdc_swap_pool_token_mint")?);
+    let sushi_usdc_swap_pool_token_mint = Keypair::from_base58_string(&env::var("sushi_usdc_swap_pool_token_mint")?);
+    let ray_usdc_swap_pool_token_mint = Keypair::from_base58_string(&env::var("ray_usdc_swap_pool_token_mint")?);
+    let fida_usdc_swap_pool_token_mint = Keypair::from_base58_string(&env::var("fida_usdc_swap_pool_token_mint")?);
+
+    let sol_usdc_swap_fee = Keypair::from_base58_string(&env::var("sol_usdc_swap_fee")?);
+    let ftt_usdc_swap_fee = Keypair::from_base58_string(&env::var("ftt_usdc_swap_fee")?);
+    let ren_usdc_swap_fee = Keypair::from_base58_string(&env::var("ren_usdc_swap_fee")?);
+    let srm_usdc_swap_fee = Keypair::from_base58_string(&env::var("srm_usdc_swap_fee")?);
+    let sushi_usdc_swap_fee = Keypair::from_base58_string(&env::var("sushi_usdc_swap_fee")?);
+    let ray_usdc_swap_fee = Keypair::from_base58_string(&env::var("ray_usdc_swap_fee")?);
+    let fida_usdc_swap_fee = Keypair::from_base58_string(&env::var("fida_usdc_swap_fee")?);
+
+    // Print balances
+    {
+        let fund_token_supply = client.get_token_supply(&fund_token_mint)?;
+        println!("fund_token_supply: {}", fund_token_supply.ui_amount);
+
+        let initializer_fee_account_balance = client.get_token_account_balance(&initializer_fee_account)?;
+        println!(
+            "initializer_fee_account_balance: {}",
+            initializer_fee_account_balance.ui_amount
         );
-        initializer_x_token_account
-    };
 
-    let initializer_y_token_account = if let Ok(base58) = env::var("initializer_y_token_account") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        let initializer_y_token_account =
-            token::create_account(&mut client, &initializer_account.pubkey(), &y_token_mint.pubkey())
-                .print_in_place("initializer_y_token_account");
-        token::mint_to(
-            &mut client,
-            &initializer_account,
-            &y_token_mint.pubkey(),
-            &initializer_y_token_account.pubkey(),
-            200,
-            0,
-        );
-        initializer_y_token_account
-    };
+        let lqd_fee_account_balance = client.get_token_account_balance(&lqd_fee_account)?;
+        println!("lqd_fee_account_balance: {}", lqd_fee_account_balance.ui_amount);
 
-    let _initializer_basic_token_account = if let Ok(base58) = env::var("initializer_basic_token_account") {
-        Keypair::from_base58_string(&base58)
-    } else {
-        let initializer_basic_token_account =
-            token::create_account(&mut client, &initializer_account.pubkey(), &basic_token_mint.pubkey())
-                .print_in_place("initializer_basic_token_account");
-        token::mint_to(
-            &mut client,
-            &initializer_account,
-            &basic_token_mint.pubkey(),
-            &initializer_basic_token_account.pubkey(),
-            100000,
-            2,
-        );
-        initializer_basic_token_account
-    };
+        for (i, asset) in pool_state.assets.iter().enumerate() {
+            let asset_balance = client.get_token_account_balance(&asset.vault_address)?;
+            println!("{} asset_balance: {}", i, asset_balance.ui_amount);
+        }
 
-    let fund_name = "Test fund";
+        let asset_balance = client.get_token_account_balance(&fund_usdc_token_vault_account)?;
+        println!("basic asset_balance: {}", asset_balance.ui_amount);
+    }
 
-    // Create fund accounts
-    let fund_account_data_len = fund::state::calc_len(fund_name, 2);
-    let fund_account = client
-        .create_account(&fund_program_id, fund_account_data_len)
-        .print_in_place("fund_account");
-
-    let (fund_vault_authority, seed) =
-        Pubkey::find_program_address(&[fund_account.pubkey().as_ref()], &fund_program_id);
-    println!("fund_vault_authority: {}, seed: {}", fund_vault_authority, seed);
-
-    // Create fund token
-    let fund_token_mint = token::create_token(&mut client, &fund_vault_authority, 0).print_in_place("fund_token_mint");
-
-    let initial_supply_fund_token_account =
-        token::create_account(&mut client, &fund_vault_authority, &fund_token_mint.pubkey())
-            .print_in_place("initial_supply_fund_token_account");
-
-    let fund_x_token_vault_account = token::create_account(&mut client, &fund_vault_authority, &x_token_mint.pubkey())
-        .print_in_place("fund_x_token_vault_account");
-
-    let fund_y_token_vault_account = token::create_account(&mut client, &fund_vault_authority, &y_token_mint.pubkey())
-        .print_in_place("fund_y_token_vault_account");
-
-    let fund_basic_token_vault_account =
-        token::create_account(&mut client, &fund_vault_authority, &basic_token_mint.pubkey())
-            .print_in_place("fund_basic_token_vault_account");
-
-    // Transfer initial assets to fund
-    token::transfer_to(
-        &mut client,
-        &initializer_account,
-        &x_token_mint.pubkey(),
-        &initializer_x_token_account.pubkey(),
-        &fund_x_token_vault_account.pubkey(),
-        70,
-        2,
-    );
-    token::transfer_to(
-        &mut client,
-        &initializer_account,
-        &y_token_mint.pubkey(),
-        &initializer_y_token_account.pubkey(),
-        &fund_y_token_vault_account.pubkey(),
-        30,
-        0,
-    );
-
-    // Fees
-    let initializer_fee_account =
-        token::create_account(&mut client, &initializer_account.pubkey(), &fund_token_mint.pubkey())
-            .print_in_place("initializer_fee_account");
-
-    let lqd_fee_account = token::create_account(&mut client, &POOL_FEE_OWNER_ID, &fund_token_mint.pubkey())
-        .print_in_place("lqd_fee_account");
-
-    let data = FundRequest {
+    let pause_data = FundRequest {
+        tag: FundRequestTag::default(),
+        inner: FundInstructionInner::Pause,
+    }
+    .try_to_vec()?;
+    let rebalance_data = FundRequest {
         tag: FundRequestTag::default(),
         inner: FundInstructionInner::Rebalance,
     }
     .try_to_vec()?;
+    let unpause_data = FundRequest {
+        tag: FundRequestTag::default(),
+        inner: FundInstructionInner::Unpause,
+    }
+    .try_to_vec()?;
 
     let mut transaction = Transaction::new_with_payer(
-        &[Instruction {
-            program_id: fund_program_id,
-            accounts: vec![
-                AccountMeta::new(fund_account.pubkey(), false),
-                AccountMeta::new(fund_token_mint.pubkey(), false),
-                AccountMeta::new(fund_x_token_vault_account.pubkey(), false),
-                AccountMeta::new(fund_y_token_vault_account.pubkey(), false),
-                AccountMeta::new_readonly(fund_vault_authority, false),
-                AccountMeta::new_readonly(lqd_fee_account.pubkey(), false),
-                AccountMeta::new_readonly(initializer_fee_account.pubkey(), false),
-                AccountMeta::new_readonly(sysvar::rent::id(), false),
-                AccountMeta::new(initializer_account.pubkey(), false),
-                AccountMeta::new(initial_supply_fund_token_account.pubkey(), false),
-                AccountMeta::new_readonly(fund_basic_token_vault_account.pubkey(), false),
-                AccountMeta::new_readonly(spl_token::id(), false),
-            ],
-            data,
-        }],
+        &[
+            Instruction {
+                program_id: fund_program_id,
+                accounts: vec![
+                    AccountMeta::new(fund_account.pubkey(), false),
+                    AccountMeta::new_readonly(initializer_account.pubkey(), true),
+                ],
+                data: pause_data,
+            },
+            Instruction {
+                program_id: fund_program_id,
+                accounts: vec![
+                    AccountMeta::new(fund_account.pubkey(), false),
+                    AccountMeta::new_readonly(initializer_account.pubkey(), true),
+                    AccountMeta::new(fund_sol_token_vault_account, false),
+                    AccountMeta::new(fund_ftt_token_vault_account, false),
+                    AccountMeta::new(fund_ren_token_vault_account, false),
+                    AccountMeta::new(fund_srm_token_vault_account, false),
+                    AccountMeta::new(fund_sushi_token_vault_account, false),
+                    AccountMeta::new(fund_ray_token_vault_account, false),
+                    AccountMeta::new(fund_fida_token_vault_account, false),
+                    AccountMeta::new_readonly(fund_vault_authority, false),
+                    AccountMeta::new(fund_usdc_token_vault_account, false),
+                    // SOL
+                    AccountMeta::new_readonly(sol_usdc_swap.pubkey(), false),
+                    AccountMeta::new_readonly(sol_usdc_swap_authority, false),
+                    AccountMeta::new(sol_usdc_swap_token_sol.pubkey(), false),
+                    AccountMeta::new(sol_usdc_swap_token_usdc.pubkey(), false),
+                    AccountMeta::new(sol_usdc_swap_pool_token_mint.pubkey(), false),
+                    AccountMeta::new(sol_usdc_swap_fee.pubkey(), false),
+                    // FTT
+                    AccountMeta::new_readonly(ftt_usdc_swap.pubkey(), false),
+                    AccountMeta::new_readonly(ftt_usdc_swap_authority, false),
+                    AccountMeta::new(ftt_usdc_swap_token_ftt.pubkey(), false),
+                    AccountMeta::new(ftt_usdc_swap_token_usdc.pubkey(), false),
+                    AccountMeta::new(ftt_usdc_swap_pool_token_mint.pubkey(), false),
+                    AccountMeta::new(ftt_usdc_swap_fee.pubkey(), false),
+                    // REN
+                    AccountMeta::new_readonly(ren_usdc_swap.pubkey(), false),
+                    AccountMeta::new_readonly(ren_usdc_swap_authority, false),
+                    AccountMeta::new(ren_usdc_swap_token_ren.pubkey(), false),
+                    AccountMeta::new(ren_usdc_swap_token_usdc.pubkey(), false),
+                    AccountMeta::new(ren_usdc_swap_pool_token_mint.pubkey(), false),
+                    AccountMeta::new(ren_usdc_swap_fee.pubkey(), false),
+                    // SRM
+                    AccountMeta::new_readonly(srm_usdc_swap.pubkey(), false),
+                    AccountMeta::new_readonly(srm_usdc_swap_authority, false),
+                    AccountMeta::new(srm_usdc_swap_token_srm.pubkey(), false),
+                    AccountMeta::new(srm_usdc_swap_token_usdc.pubkey(), false),
+                    AccountMeta::new(srm_usdc_swap_pool_token_mint.pubkey(), false),
+                    AccountMeta::new(srm_usdc_swap_fee.pubkey(), false),
+                    // SUSHI
+                    AccountMeta::new_readonly(sushi_usdc_swap.pubkey(), false),
+                    AccountMeta::new_readonly(sushi_usdc_swap_authority, false),
+                    AccountMeta::new(sushi_usdc_swap_token_sushi.pubkey(), false),
+                    AccountMeta::new(sushi_usdc_swap_token_usdc.pubkey(), false),
+                    AccountMeta::new(sushi_usdc_swap_pool_token_mint.pubkey(), false),
+                    AccountMeta::new(sushi_usdc_swap_fee.pubkey(), false),
+                    // RAY
+                    AccountMeta::new_readonly(ray_usdc_swap.pubkey(), false),
+                    AccountMeta::new_readonly(ray_usdc_swap_authority, false),
+                    AccountMeta::new(ray_usdc_swap_token_ray.pubkey(), false),
+                    AccountMeta::new(ray_usdc_swap_token_usdc.pubkey(), false),
+                    AccountMeta::new(ray_usdc_swap_pool_token_mint.pubkey(), false),
+                    AccountMeta::new(ray_usdc_swap_fee.pubkey(), false),
+                    // FIDA
+                    AccountMeta::new_readonly(fida_usdc_swap.pubkey(), false),
+                    AccountMeta::new_readonly(fida_usdc_swap_authority, false),
+                    AccountMeta::new(fida_usdc_swap_token_fida.pubkey(), false),
+                    AccountMeta::new(fida_usdc_swap_token_usdc.pubkey(), false),
+                    AccountMeta::new(fida_usdc_swap_pool_token_mint.pubkey(), false),
+                    AccountMeta::new(fida_usdc_swap_fee.pubkey(), false),
+                    //
+                    AccountMeta::new_readonly(spl_token::id(), false),
+                    AccountMeta::new_readonly(swap_program_id, false),
+                ],
+                data: rebalance_data,
+            },
+            Instruction {
+                program_id: fund_program_id,
+                accounts: vec![
+                    AccountMeta::new(fund_account.pubkey(), false),
+                    AccountMeta::new_readonly(initializer_account.pubkey(), true),
+                    AccountMeta::new(fund_sol_token_vault_account, false),
+                    AccountMeta::new(fund_ftt_token_vault_account, false),
+                    AccountMeta::new(fund_ren_token_vault_account, false),
+                    AccountMeta::new(fund_srm_token_vault_account, false),
+                    AccountMeta::new(fund_sushi_token_vault_account, false),
+                    AccountMeta::new(fund_ray_token_vault_account, false),
+                    AccountMeta::new(fund_fida_token_vault_account, false),
+                ],
+                data: unpause_data,
+            },
+        ],
         Some(&client.payer_pubkey()),
     );
-    transaction.sign(&[client.payer()], client.recent_blockhash());
+    transaction.sign(&[client.payer(), &initializer_account], client.recent_blockhash());
     client.process_transaction(&transaction);
 
-    let fund_account = client.get_account(&fund_account.pubkey()).unwrap();
+    // Print balances
+    {
+        let fund_token_supply = client.get_token_supply(&fund_token_mint)?;
+        println!("fund_token_supply: {}", fund_token_supply.ui_amount);
 
-    assert_eq!(fund_account.owner, fund_program_id);
-    assert_eq!(fund_account.executable, false);
+        let initializer_fee_account_balance = client.get_token_account_balance(&initializer_fee_account)?;
+        println!(
+            "initializer_fee_account_balance: {}",
+            initializer_fee_account_balance.ui_amount
+        );
 
-    let mut data = fund_account.data.as_slice();
-    let pool_state: PoolState = BorshDeserialize::deserialize(&mut data).unwrap();
-    assert_eq!(pool_state.tag, PoolStateTag::default());
-    assert_eq!(pool_state.pool_token_mint.as_ref(), &fund_token_mint.pubkey());
-    assert_eq!(pool_state.assets.len(), 2);
-    assert_eq!(pool_state.vault_signer.as_ref(), &fund_vault_authority);
-    assert_eq!(pool_state.vault_signer_nonce, seed);
-    assert_eq!(pool_state.name.as_str(), fund_name);
-    assert_eq!(pool_state.fee_rate, 1000);
+        let lqd_fee_account_balance = client.get_token_account_balance(&lqd_fee_account)?;
+        println!("lqd_fee_account_balance: {}", lqd_fee_account_balance.ui_amount);
 
-    let mut data = pool_state.custom_state.as_slice();
-    let fund_state: FundState = BorshDeserialize::deserialize(&mut data).unwrap();
-    assert_eq!(fund_state.paused, false);
-    assert_eq!(fund_state.asset_weights, vec![7, 3]);
-    assert_eq!(fund_state.basic_asset.mint.as_ref(), &basic_token_mint.pubkey());
-    assert_eq!(
-        fund_state.basic_asset.vault_address.as_ref(),
-        &fund_basic_token_vault_account.pubkey()
-    );
+        for (i, asset) in pool_state.assets.iter().enumerate() {
+            let asset_balance = client.get_token_account_balance(&asset.vault_address)?;
+            println!("{} asset_balance: {}", i, asset_balance.ui_amount);
+        }
 
-    let balance = client
-        .get_token_account_balance(&initial_supply_fund_token_account.pubkey())
-        .unwrap();
-    let fund_token_account = client.get_account(&initial_supply_fund_token_account.pubkey()).unwrap();
-
-    assert_eq!(balance.ui_amount, 100.0);
-    assert_eq!(fund_token_account.owner, spl_token::id());
-    assert_eq!(fund_token_account.executable, false);
+        let asset_balance = client.get_token_account_balance(&fund_usdc_token_vault_account)?;
+        println!("basic asset_balance: {}", asset_balance.ui_amount);
+    }
 
     Ok(())
 }
