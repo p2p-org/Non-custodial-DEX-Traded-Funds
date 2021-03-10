@@ -239,7 +239,6 @@ impl Fund {
                 let pool_vaults = next_account_infos(accounts_iter, assets_count)?;
                 let vault_signer = next_account_info(accounts_iter)?;
                 let basic_asset_vault = next_account_info(accounts_iter)?;
-                let spl_token_program = next_account_info(accounts_iter)?;
 
                 let mut swaps = Vec::with_capacity(assets_count);
                 for _ in 0..assets_count {
@@ -259,6 +258,10 @@ impl Fund {
                         fee,
                     });
                 }
+
+                let spl_token_program = next_account_info(accounts_iter)?;
+                let spl_token_swap_program = next_account_info(accounts_iter)?;
+                let spl_token_swap_id = spl_token_swap_program.key;
 
                 // Check the accounts
                 check_account_address(vault_signer, &pool_state.vault_signer, stringify!(vault_signer))?;
@@ -282,7 +285,7 @@ impl Fund {
                     msg!("Check accounts for asset number {}", i);
                     check_account_address(asset_vault, &asset.vault_address, stringify!(asset_vault))?;
                     check_token_account(asset_vault, &asset.mint, Some(&pool_state.vault_signer))?;
-                    if swap.owner != &spl_token_swap::id() {
+                    if swap.owner != spl_token_swap_id {
                         msg!("Token-swap account {} not owned by spl-token-swap program", i);
                         return Err(ProgramError::InvalidAccountData);
                     }
@@ -345,7 +348,7 @@ impl Fund {
                         let minimum_amount_out = amount_delta - amount_delta / fund_state.slippage_divider;
 
                         let swap_instruction = spl_token_swap::instruction::swap(
-                            &spl_token_swap::id(),
+                            spl_token_swap_id,
                             &spl_token::id(),
                             swaps[i].swap.key,
                             swaps[i].authority.key,
@@ -407,7 +410,7 @@ impl Fund {
                     })?;
 
                     let swap_instruction = spl_token_swap::instruction::swap(
-                        &spl_token_swap::id(),
+                        spl_token_swap_id,
                         &spl_token::id(),
                         swaps[i].swap.key,
                         swaps[i].authority.key,

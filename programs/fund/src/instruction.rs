@@ -10,7 +10,7 @@ declare_tag!(FundRequestTag, u64, 0x112ea41452f06767);
 /// - `[writable]` Fund admin account
 /// - `[writable]` Initial supply fund token account
 /// - `[writable]` Fund vault account of basic asset
-/// - `[]` spl-token program account
+/// - `[]` spl-token program ID
 #[derive(Clone, PartialEq, Eq, Debug, Default, BorshSerialize, BorshDeserialize)]
 pub struct InitializeFundData {
     pub slippage_divider: u64,
@@ -60,6 +60,8 @@ pub enum FundInstructionInner {
     ///   * `[writable]` Swap basic asset account
     ///   * `[writable]` Swap pool token mint, to generate trading fees
     ///   * `[writable]` Swap fee account, to receive trading fees
+    /// - `[]` spl-token program ID
+    /// - `[]` spl-token-swap program ID
     Rebalance,
 
     /// Approves an account to spend tokens on behalf of the pool.
