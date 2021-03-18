@@ -2,7 +2,11 @@ use std::{env, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use borsh::ser::BorshSerialize;
-use fund_tests::{client::Client, print::Print, token};
+use fund_tests::{
+    client::{Client, FundClient},
+    print::Print,
+    token,
+};
 use serum_pool::schema::{PoolAction, PoolRequest, PoolRequestInner, PoolRequestTag};
 use solana_client::rpc_client::RpcClient;
 use solana_program::{
@@ -74,26 +78,26 @@ fn main() -> Result<()> {
     // Print balances
     {
         let fund_token_supply = client.get_token_supply(&fund_token_mint)?;
-        println!("fund_token_supply: {}", fund_token_supply.ui_amount);
+        println!("fund_token_supply: {:?}", fund_token_supply.ui_amount);
 
         let initializer_fee_account_balance = client.get_token_account_balance(&initializer_fee_account)?;
         println!(
-            "initializer_fee_account_balance: {}",
+            "initializer_fee_account_balance: {:?}",
             initializer_fee_account_balance.ui_amount
         );
 
         let lqd_fee_account_balance = client.get_token_account_balance(&lqd_fee_account)?;
-        println!("lqd_fee_account_balance: {}", lqd_fee_account_balance.ui_amount);
+        println!("lqd_fee_account_balance: {:?}", lqd_fee_account_balance.ui_amount);
 
         for (i, asset) in pool_state.assets.iter().enumerate() {
             let asset_balance = client.get_token_account_balance(&asset.vault_address)?;
-            println!("{} asset_balance: {}", i, asset_balance.ui_amount);
+            println!("{} asset_balance: {:?}", i, asset_balance.ui_amount);
         }
 
         for (i, initializer_asset) in initializer_assets.iter().enumerate() {
             let initializer_asset_balance = client.get_token_account_balance(initializer_asset)?;
             println!(
-                "{} initializer_asset_balance: {}",
+                "{} initializer_asset_balance: {:?}",
                 i, initializer_asset_balance.ui_amount
             );
         }
@@ -143,26 +147,26 @@ fn main() -> Result<()> {
     // Print balances
     {
         let fund_token_supply = client.get_token_supply(&fund_token_mint)?;
-        println!("fund_token_supply: {}", fund_token_supply.ui_amount);
+        println!("fund_token_supply: {:?}", fund_token_supply.ui_amount);
 
         let initializer_fee_account_balance = client.get_token_account_balance(&initializer_fee_account)?;
         println!(
-            "initializer_fee_account_balance: {}",
+            "initializer_fee_account_balance: {:?}",
             initializer_fee_account_balance.ui_amount
         );
 
         let lqd_fee_account_balance = client.get_token_account_balance(&lqd_fee_account)?;
-        println!("lqd_fee_account_balance: {}", lqd_fee_account_balance.ui_amount);
+        println!("lqd_fee_account_balance: {:?}", lqd_fee_account_balance.ui_amount);
 
         for (i, asset) in pool_state.assets.iter().enumerate() {
             let asset_balance = client.get_token_account_balance(&asset.vault_address)?;
-            println!("{} asset_balance: {}", i, asset_balance.ui_amount);
+            println!("{} asset_balance: {:?}", i, asset_balance.ui_amount);
         }
 
         for (i, initializer_asset) in initializer_assets.iter().enumerate() {
             let initializer_asset_balance = client.get_token_account_balance(initializer_asset)?;
             println!(
-                "{} initializer_asset_balance: {}",
+                "{} initializer_asset_balance: {:?}",
                 i, initializer_asset_balance.ui_amount
             );
         }

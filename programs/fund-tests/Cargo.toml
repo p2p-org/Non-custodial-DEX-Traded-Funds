@@ -7,14 +7,15 @@ edition = "2018"
 dotenv = "0.15.0"
 anyhow = "1.0.38"
 fund = { path = "../fund" }
-solana-program = "1.5.11"
-solana-sdk = "1.5.11"
-solana-client = "1.5.11"
+solana-program = "1.6.1"
+solana-sdk = "1.6.1"
+solana-client = "1.6.1"
 spl-token = { version = "3.1.0", features = ["no-entrypoint"] }
 spl-token-swap = { git = "https://github.com/solana-labs/solana-program-library.git", features = ["no-entrypoint"] }
 serum-borsh = "0.8.1-serum.1"
 serum-pool = { path = "../serum-pool" }
+solana-client-helpers = { git = "https://github.com/p2p-org/solana-client-helpers.git" }
 
 [dev-dependencies]
-solana-program-test = "1.5.11"
-tokio = { version = "0.3", features = ["macros"] }
+solana-program-test = "1.6.1"
+tokio = { version = "0.3", features = ["rt", "macros"] }

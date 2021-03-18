@@ -3,7 +3,7 @@ use std::{env, str::FromStr};
 use anyhow::{anyhow, Result};
 use borsh::ser::BorshSerialize;
 use fund::instruction::{FundInstructionInner, FundRequest, FundRequestTag};
-use fund_tests::client::Client;
+use fund_tests::client::{Client, FundClient};
 use solana_client::rpc_client::RpcClient;
 use solana_program::{
     instruction::{AccountMeta, Instruction},
@@ -104,24 +104,24 @@ fn main() -> Result<()> {
     // Print balances
     {
         let fund_token_supply = client.get_token_supply(&fund_token_mint)?;
-        println!("fund_token_supply: {}", fund_token_supply.ui_amount);
+        println!("fund_token_supply: {:?}", fund_token_supply.ui_amount);
 
         let initializer_fee_account_balance = client.get_token_account_balance(&initializer_fee_account)?;
         println!(
-            "initializer_fee_account_balance: {}",
+            "initializer_fee_account_balance: {:?}",
             initializer_fee_account_balance.ui_amount
         );
 
         let lqd_fee_account_balance = client.get_token_account_balance(&lqd_fee_account)?;
-        println!("lqd_fee_account_balance: {}", lqd_fee_account_balance.ui_amount);
+        println!("lqd_fee_account_balance: {:?}", lqd_fee_account_balance.ui_amount);
 
         for (i, asset) in pool_state.assets.iter().enumerate() {
             let asset_balance = client.get_token_account_balance(&asset.vault_address)?;
-            println!("{} asset_balance: {}", i, asset_balance.ui_amount);
+            println!("{} asset_balance: {:?}", i, asset_balance.ui_amount);
         }
 
         let asset_balance = client.get_token_account_balance(&fund_usdc_token_vault_account)?;
-        println!("basic asset_balance: {}", asset_balance.ui_amount);
+        println!("basic asset_balance: {:?}", asset_balance.ui_amount);
     }
 
     let pause_data = FundRequest {
@@ -129,11 +129,102 @@ fn main() -> Result<()> {
         inner: FundInstructionInner::Pause,
     }
     .try_to_vec()?;
+
+    let mut transaction = Transaction::new_with_payer(
+        &[Instruction {
+            program_id: fund_program_id,
+            accounts: vec![
+                AccountMeta::new(fund_account.pubkey(), false),
+                AccountMeta::new_readonly(initializer_account.pubkey(), true),
+            ],
+            data: pause_data,
+        }],
+        Some(&client.payer_pubkey()),
+    );
+    transaction.sign(&[client.payer(), &initializer_account], client.recent_blockhash());
+    client.process_transaction(&transaction);
+
     let rebalance_data = FundRequest {
         tag: FundRequestTag::default(),
         inner: FundInstructionInner::Rebalance,
     }
     .try_to_vec()?;
+
+    let mut transaction = Transaction::new_with_payer(
+        &[Instruction {
+            program_id: fund_program_id,
+            accounts: vec![
+                AccountMeta::new(fund_account.pubkey(), false),
+                AccountMeta::new_readonly(initializer_account.pubkey(), true),
+                AccountMeta::new(fund_sol_token_vault_account, false),
+                AccountMeta::new(fund_ftt_token_vault_account, false),
+                AccountMeta::new(fund_ren_token_vault_account, false),
+                AccountMeta::new(fund_srm_token_vault_account, false),
+                AccountMeta::new(fund_sushi_token_vault_account, false),
+                AccountMeta::new(fund_ray_token_vault_account, false),
+                AccountMeta::new(fund_fida_token_vault_account, false),
+                AccountMeta::new_readonly(fund_vault_authority, false),
+                AccountMeta::new(fund_usdc_token_vault_account, false),
+                // SOL
+                AccountMeta::new_readonly(sol_usdc_swap.pubkey(), false),
+                AccountMeta::new_readonly(sol_usdc_swap_authority, false),
+                AccountMeta::new(sol_usdc_swap_token_sol.pubkey(), false),
+                AccountMeta::new(sol_usdc_swap_token_usdc.pubkey(), false),
+                AccountMeta::new(sol_usdc_swap_pool_token_mint.pubkey(), false),
+                AccountMeta::new(sol_usdc_swap_fee.pubkey(), false),
+                // FTT
+                AccountMeta::new_readonly(ftt_usdc_swap.pubkey(), false),
+                AccountMeta::new_readonly(ftt_usdc_swap_authority, false),
+                AccountMeta::new(ftt_usdc_swap_token_ftt.pubkey(), false),
+                AccountMeta::new(ftt_usdc_swap_token_usdc.pubkey(), false),
+                AccountMeta::new(ftt_usdc_swap_pool_token_mint.pubkey(), false),
+                AccountMeta::new(ftt_usdc_swap_fee.pubkey(), false),
+                // REN
+                AccountMeta::new_readonly(ren_usdc_swap.pubkey(), false),
+                AccountMeta::new_readonly(ren_usdc_swap_authority, false),
+                AccountMeta::new(ren_usdc_swap_token_ren.pubkey(), false),
+                AccountMeta::new(ren_usdc_swap_token_usdc.pubkey(), false),
+                AccountMeta::new(ren_usdc_swap_pool_token_mint.pubkey(), false),
+                AccountMeta::new(ren_usdc_swap_fee.pubkey(), false),
+                // SRM
+                AccountMeta::new_readonly(srm_usdc_swap.pubkey(), false),
+                AccountMeta::new_readonly(srm_usdc_swap_authority, false),
+                AccountMeta::new(srm_usdc_swap_token_srm.pubkey(), false),
+                AccountMeta::new(srm_usdc_swap_token_usdc.pubkey(), false),
+                AccountMeta::new(srm_usdc_swap_pool_token_mint.pubkey(), false),
+                AccountMeta::new(srm_usdc_swap_fee.pubkey(), false),
+                // SUSHI
+                AccountMeta::new_readonly(sushi_usdc_swap.pubkey(), false),
+                AccountMeta::new_readonly(sushi_usdc_swap_authority, false),
+                AccountMeta::new(sushi_usdc_swap_token_sushi.pubkey(), false),
+                AccountMeta::new(sushi_usdc_swap_token_usdc.pubkey(), false),
+                AccountMeta::new(sushi_usdc_swap_pool_token_mint.pubkey(), false),
+                AccountMeta::new(sushi_usdc_swap_fee.pubkey(), false),
+                // RAY
+                AccountMeta::new_readonly(ray_usdc_swap.pubkey(), false),
+                AccountMeta::new_readonly(ray_usdc_swap_authority, false),
+                AccountMeta::new(ray_usdc_swap_token_ray.pubkey(), false),
+                AccountMeta::new(ray_usdc_swap_token_usdc.pubkey(), false),
+                AccountMeta::new(ray_usdc_swap_pool_token_mint.pubkey(), false),
+                AccountMeta::new(ray_usdc_swap_fee.pubkey(), false),
+                // FIDA
+                AccountMeta::new_readonly(fida_usdc_swap.pubkey(), false),
+                AccountMeta::new_readonly(fida_usdc_swap_authority, false),
+                AccountMeta::new(fida_usdc_swap_token_fida.pubkey(), false),
+                AccountMeta::new(fida_usdc_swap_token_usdc.pubkey(), false),
+                AccountMeta::new(fida_usdc_swap_pool_token_mint.pubkey(), false),
+                AccountMeta::new(fida_usdc_swap_fee.pubkey(), false),
+                //
+                AccountMeta::new_readonly(spl_token::id(), false),
+                AccountMeta::new_readonly(swap_program_id, false),
+            ],
+            data: rebalance_data,
+        }],
+        Some(&client.payer_pubkey()),
+    );
+    transaction.sign(&[client.payer(), &initializer_account], client.recent_blockhash());
+    client.process_transaction(&transaction);
+
     let unpause_data = FundRequest {
         tag: FundRequestTag::default(),
         inner: FundInstructionInner::Unpause,
@@ -141,100 +232,21 @@ fn main() -> Result<()> {
     .try_to_vec()?;
 
     let mut transaction = Transaction::new_with_payer(
-        &[
-            Instruction {
-                program_id: fund_program_id,
-                accounts: vec![
-                    AccountMeta::new(fund_account.pubkey(), false),
-                    AccountMeta::new_readonly(initializer_account.pubkey(), true),
-                ],
-                data: pause_data,
-            },
-            Instruction {
-                program_id: fund_program_id,
-                accounts: vec![
-                    AccountMeta::new(fund_account.pubkey(), false),
-                    AccountMeta::new_readonly(initializer_account.pubkey(), true),
-                    AccountMeta::new(fund_sol_token_vault_account, false),
-                    AccountMeta::new(fund_ftt_token_vault_account, false),
-                    AccountMeta::new(fund_ren_token_vault_account, false),
-                    AccountMeta::new(fund_srm_token_vault_account, false),
-                    AccountMeta::new(fund_sushi_token_vault_account, false),
-                    AccountMeta::new(fund_ray_token_vault_account, false),
-                    AccountMeta::new(fund_fida_token_vault_account, false),
-                    AccountMeta::new_readonly(fund_vault_authority, false),
-                    AccountMeta::new(fund_usdc_token_vault_account, false),
-                    // SOL
-                    AccountMeta::new_readonly(sol_usdc_swap.pubkey(), false),
-                    AccountMeta::new_readonly(sol_usdc_swap_authority, false),
-                    AccountMeta::new(sol_usdc_swap_token_sol.pubkey(), false),
-                    AccountMeta::new(sol_usdc_swap_token_usdc.pubkey(), false),
-                    AccountMeta::new(sol_usdc_swap_pool_token_mint.pubkey(), false),
-                    AccountMeta::new(sol_usdc_swap_fee.pubkey(), false),
-                    // FTT
-                    AccountMeta::new_readonly(ftt_usdc_swap.pubkey(), false),
-                    AccountMeta::new_readonly(ftt_usdc_swap_authority, false),
-                    AccountMeta::new(ftt_usdc_swap_token_ftt.pubkey(), false),
-                    AccountMeta::new(ftt_usdc_swap_token_usdc.pubkey(), false),
-                    AccountMeta::new(ftt_usdc_swap_pool_token_mint.pubkey(), false),
-                    AccountMeta::new(ftt_usdc_swap_fee.pubkey(), false),
-                    // REN
-                    AccountMeta::new_readonly(ren_usdc_swap.pubkey(), false),
-                    AccountMeta::new_readonly(ren_usdc_swap_authority, false),
-                    AccountMeta::new(ren_usdc_swap_token_ren.pubkey(), false),
-                    AccountMeta::new(ren_usdc_swap_token_usdc.pubkey(), false),
-                    AccountMeta::new(ren_usdc_swap_pool_token_mint.pubkey(), false),
-                    AccountMeta::new(ren_usdc_swap_fee.pubkey(), false),
-                    // SRM
-                    AccountMeta::new_readonly(srm_usdc_swap.pubkey(), false),
-                    AccountMeta::new_readonly(srm_usdc_swap_authority, false),
-                    AccountMeta::new(srm_usdc_swap_token_srm.pubkey(), false),
-                    AccountMeta::new(srm_usdc_swap_token_usdc.pubkey(), false),
-                    AccountMeta::new(srm_usdc_swap_pool_token_mint.pubkey(), false),
-                    AccountMeta::new(srm_usdc_swap_fee.pubkey(), false),
-                    // SUSHI
-                    AccountMeta::new_readonly(sushi_usdc_swap.pubkey(), false),
-                    AccountMeta::new_readonly(sushi_usdc_swap_authority, false),
-                    AccountMeta::new(sushi_usdc_swap_token_sushi.pubkey(), false),
-                    AccountMeta::new(sushi_usdc_swap_token_usdc.pubkey(), false),
-                    AccountMeta::new(sushi_usdc_swap_pool_token_mint.pubkey(), false),
-                    AccountMeta::new(sushi_usdc_swap_fee.pubkey(), false),
-                    // RAY
-                    AccountMeta::new_readonly(ray_usdc_swap.pubkey(), false),
-                    AccountMeta::new_readonly(ray_usdc_swap_authority, false),
-                    AccountMeta::new(ray_usdc_swap_token_ray.pubkey(), false),
-                    AccountMeta::new(ray_usdc_swap_token_usdc.pubkey(), false),
-                    AccountMeta::new(ray_usdc_swap_pool_token_mint.pubkey(), false),
-                    AccountMeta::new(ray_usdc_swap_fee.pubkey(), false),
-                    // FIDA
-                    AccountMeta::new_readonly(fida_usdc_swap.pubkey(), false),
-                    AccountMeta::new_readonly(fida_usdc_swap_authority, false),
-                    AccountMeta::new(fida_usdc_swap_token_fida.pubkey(), false),
-                    AccountMeta::new(fida_usdc_swap_token_usdc.pubkey(), false),
-                    AccountMeta::new(fida_usdc_swap_pool_token_mint.pubkey(), false),
-                    AccountMeta::new(fida_usdc_swap_fee.pubkey(), false),
-                    //
-                    AccountMeta::new_readonly(spl_token::id(), false),
-                    AccountMeta::new_readonly(swap_program_id, false),
-                ],
-                data: rebalance_data,
-            },
-            Instruction {
-                program_id: fund_program_id,
-                accounts: vec![
-                    AccountMeta::new(fund_account.pubkey(), false),
-                    AccountMeta::new_readonly(initializer_account.pubkey(), true),
-                    AccountMeta::new(fund_sol_token_vault_account, false),
-                    AccountMeta::new(fund_ftt_token_vault_account, false),
-                    AccountMeta::new(fund_ren_token_vault_account, false),
-                    AccountMeta::new(fund_srm_token_vault_account, false),
-                    AccountMeta::new(fund_sushi_token_vault_account, false),
-                    AccountMeta::new(fund_ray_token_vault_account, false),
-                    AccountMeta::new(fund_fida_token_vault_account, false),
-                ],
-                data: unpause_data,
-            },
-        ],
+        &[Instruction {
+            program_id: fund_program_id,
+            accounts: vec![
+                AccountMeta::new(fund_account.pubkey(), false),
+                AccountMeta::new_readonly(initializer_account.pubkey(), true),
+                AccountMeta::new(fund_sol_token_vault_account, false),
+                AccountMeta::new(fund_ftt_token_vault_account, false),
+                AccountMeta::new(fund_ren_token_vault_account, false),
+                AccountMeta::new(fund_srm_token_vault_account, false),
+                AccountMeta::new(fund_sushi_token_vault_account, false),
+                AccountMeta::new(fund_ray_token_vault_account, false),
+                AccountMeta::new(fund_fida_token_vault_account, false),
+            ],
+            data: unpause_data,
+        }],
         Some(&client.payer_pubkey()),
     );
     transaction.sign(&[client.payer(), &initializer_account], client.recent_blockhash());
@@ -243,24 +255,24 @@ fn main() -> Result<()> {
     // Print balances
     {
         let fund_token_supply = client.get_token_supply(&fund_token_mint)?;
-        println!("fund_token_supply: {}", fund_token_supply.ui_amount);
+        println!("fund_token_supply: {:?}", fund_token_supply.ui_amount);
 
         let initializer_fee_account_balance = client.get_token_account_balance(&initializer_fee_account)?;
         println!(
-            "initializer_fee_account_balance: {}",
+            "initializer_fee_account_balance: {:?}",
             initializer_fee_account_balance.ui_amount
         );
 
         let lqd_fee_account_balance = client.get_token_account_balance(&lqd_fee_account)?;
-        println!("lqd_fee_account_balance: {}", lqd_fee_account_balance.ui_amount);
+        println!("lqd_fee_account_balance: {:?}", lqd_fee_account_balance.ui_amount);
 
         for (i, asset) in pool_state.assets.iter().enumerate() {
             let asset_balance = client.get_token_account_balance(&asset.vault_address)?;
-            println!("{} asset_balance: {}", i, asset_balance.ui_amount);
+            println!("{} asset_balance: {:?}", i, asset_balance.ui_amount);
         }
 
         let asset_balance = client.get_token_account_balance(&fund_usdc_token_vault_account)?;
-        println!("basic asset_balance: {}", asset_balance.ui_amount);
+        println!("basic asset_balance: {:?}", asset_balance.ui_amount);
     }
 
     Ok(())

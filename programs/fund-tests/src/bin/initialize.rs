@@ -39,7 +39,7 @@ fn main() -> Result<()> {
         Keypair::from_base58_string(&base58)
     } else {
         client
-            .create_account(&system_program::id(), 0)
+            .create_account(&system_program::id(), 0, None)
             .print_in_place("initializer_account")
     };
 
@@ -65,7 +65,7 @@ fn main() -> Result<()> {
     // Create fund accounts
     let fund_account_data_len = fund::state::calc_len(fund_name, 7);
     let fund_account = client
-        .create_account(&fund_program_id, fund_account_data_len)
+        .create_account(&fund_program_id, fund_account_data_len, None)
         .print_in_place("fund_account");
 
     let (fund_vault_authority, fund_vault_authority_nonce) =
@@ -267,7 +267,7 @@ fn main() -> Result<()> {
     let balance = client.get_token_account_balance(&initial_supply_fund_token_account.pubkey())?;
     let fund_token_account = client.get_account(&initial_supply_fund_token_account.pubkey())?;
 
-    assert_eq!(balance.ui_amount, fund_token_initial_supply as f64 / 1000000.0);
+    assert_eq!(balance.ui_amount, Some(fund_token_initial_supply as f64 / 1000000.0));
     assert_eq!(fund_token_account.owner, spl_token::id());
     assert_eq!(fund_token_account.executable, false);
 

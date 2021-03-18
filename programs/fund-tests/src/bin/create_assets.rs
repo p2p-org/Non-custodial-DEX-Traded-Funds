@@ -27,7 +27,7 @@ fn main() -> Result<()> {
         Keypair::from_base58_string(&base58)
     } else {
         client
-            .create_account(&system_program::id(), 0)
+            .create_account(&system_program::id(), 0, None)
             .print_in_place("initializer_account")
     };
 
@@ -297,7 +297,7 @@ fn create_swap(
         Keypair::from_base58_string(&base58)
     } else {
         client
-            .create_account(swap_program_id, spl_token_swap::state::SwapVersion::LATEST_LEN)
+            .create_account(swap_program_id, spl_token_swap::state::SwapVersion::LATEST_LEN, None)
             .print_in_place(swap_name)
     };
 

@@ -81,7 +81,7 @@ fn main() -> Result<()> {
 
     // Create fund accounts
     let fund_account_data_len = fund::state::calc_len(fund_name, 2);
-    let fund_account = client.create_account(&fund_program_id, fund_account_data_len);
+    let fund_account = client.create_account(&fund_program_id, fund_account_data_len, None);
     println!(
         "fund_account: {}, {}",
         fund_account.pubkey(),
